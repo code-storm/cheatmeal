@@ -1,0 +1,127 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+
+  profile      PregnancyProfile?
+  dailyPlans   DailyPlan[]
+  mealServings MealServingLog[]
+}
+
+model PregnancyProfile {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id])
+
+  age                  Int
+  prePregnancyWeightKg Float
+  heightCm             Float?
+
+  weekAtSignup Int
+  signupDate   DateTime @default(now())
+  lmpDate      DateTime
+
+  currentWeightKg Float?
+  updatedAt       DateTime @updatedAt
+}
+
+// NOTE: SQLite's Prisma connector does not support native `enum` types in
+// schema.prisma (unlike Postgres/MySQL) - the schema fails validation if we
+// keep `enum ItemType { ... }` etc. with provider = "sqlite". We preserve the
+// exact field names/shape from the spec but store these as String columns,
+// and enforce the allowed value sets ("MEAL" | "EXERCISE" | "HABIT" | "GROOMING",
+// the 7 MealSlot values, "PENDING" | "COMPLETED" | "SKIPPED") at the TypeScript
+// layer via union types exported from src/lib/enums.ts.
+
+model TaskTemplate {
+  id          String    @id @default(cuid())
+  slug        String    @unique
+  type        String
+  mealSlot    String?
+  defaultTime String
+  name        String
+  description String
+  instructions String?
+
+  minWeek Int
+  maxWeek Int
+
+  nutrientTags    String
+  rotationPoolKey String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  dailyTasks   DailyTask[]
+  mealServings MealServingLog[]
+}
+
+model FoodAvoidRule {
+  id        String  @id @default(cuid())
+  foodName  String
+  matchTags String
+  reason    String
+  minWeek   Int     @default(1)
+  maxWeek   Int     @default(42)
+  severity  String  @default("avoid")
+  source    String?
+}
+
+model ActivityAvoidRule {
+  id           String  @id @default(cuid())
+  activityName String
+  matchTags    String
+  reason       String
+  minWeek      Int     @default(1)
+  maxWeek      Int     @default(42)
+  severity     String  @default("avoid")
+  source       String?
+}
+
+model DailyPlan {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  date      String
+  pregnancyWeekAtGeneration Int
+  generatedAt DateTime @default(now())
+
+  tasks DailyTask[]
+
+  @@unique([userId, date])
+}
+
+model DailyTask {
+  id             String       @id @default(cuid())
+  dailyPlanId    String
+  dailyPlan      DailyPlan    @relation(fields: [dailyPlanId], references: [id])
+  taskTemplateId String
+  taskTemplate   TaskTemplate @relation(fields: [taskTemplateId], references: [id])
+
+  scheduledTime String
+  status      String     @default("PENDING")
+  completedAt DateTime?
+
+  @@index([dailyPlanId])
+}
+
+model MealServingLog {
+  id              String       @id @default(cuid())
+  userId          String
+  user            User         @relation(fields: [userId], references: [id])
+  taskTemplateId  String
+  taskTemplate   TaskTemplate @relation(fields: [taskTemplateId], references: [id])
+  rotationPoolKey String
+  servedDate      String
+
+  @@index([userId, rotationPoolKey, servedDate])
+}
