@@ -3,6 +3,12 @@
 // into a thrown ApiError carrying the backend's parsed error message so
 // callers (and React Query) can show something meaningful.
 
+// Locally this is unset, so paths stay relative and go through Vite's dev
+// proxy (see vite.config.ts) straight to localhost:4000. In production
+// there's no proxy (the client is a static build with no backend of its
+// own), so VITE_API_BASE_URL must point at the deployed API's origin.
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "";
+
 export class ApiError extends Error {
   status: number;
   payload: unknown;
@@ -49,7 +55,7 @@ export async function apiRequest<T>(
 ): Promise<T> {
   const { method = "GET", body, signal } = options;
 
-  const res = await fetch(path, {
+  const res = await fetch(`${API_BASE_URL}${path}`, {
     method,
     credentials: "include",
     signal,

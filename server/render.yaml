@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: cheatmeal-api
+    runtime: node
+    plan: free
+    rootDir: server
+    buildCommand: npm install && npx prisma generate && npm run build
+    startCommand: npm start
+    envVars:
+      - key: TURSO_DATABASE_URL
+        sync: false
+      - key: TURSO_AUTH_TOKEN
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: CLIENT_ORIGIN
+        value: https://cheatmeal.vercel.app
+      - key: NODE_ENV
+        value: production

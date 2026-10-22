@@ -9,11 +9,19 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const COOKIE_NAME = "token";
 const COOKIE_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
 
+// In production, the frontend (Vercel) and backend (Render) are on
+// different origins, so this is a cross-site cookie - sameSite: "none"
+// is required for the browser to send it at all, which in turn requires
+// secure: true (browsers reject sameSite: "none" without secure).
+// Locally both run on localhost over http, where "lax"/non-secure is both
+// sufficient and necessary (secure cookies aren't sent over plain http).
+const isProd = process.env.NODE_ENV === "production";
+
 function setAuthCookie(res: import("express").Response, token: string): void {
   res.cookie(COOKIE_NAME, token, {
     httpOnly: true,
-    sameSite: "lax",
-    secure: false, // local http dev
+    sameSite: isProd ? "none" : "lax",
+    secure: isProd,
     maxAge: COOKIE_MAX_AGE_MS,
   });
 }
@@ -85,7 +93,13 @@ router.post("/auth/login", async (req, res, next) => {
 });
 
 router.post("/auth/logout", (_req, res) => {
-  res.clearCookie(COOKIE_NAME);
+  // clearCookie must be called with the same sameSite/secure attributes
+  // the cookie was originally set with, or some browsers won't match it.
+  res.clearCookie(COOKIE_NAME, {
+    httpOnly: true,
+    sameSite: isProd ? "none" : "lax",
+    secure: isProd,
+  });
   res.json({ ok: true });
 });
 
