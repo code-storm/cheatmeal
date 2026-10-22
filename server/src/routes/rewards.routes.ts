@@ -121,7 +121,7 @@ router.post("/rewards/:slug/unlock", requireAuth, async (req: AuthedRequest, res
       });
       const newBadges = await checkAndAwardBadges(tx, userId);
       return { pointsBalance: updatedProfile.pointsBalance, newBadges };
-    });
+    }, { timeout: 15000 });
 
     res.json({
       pointsBalance,

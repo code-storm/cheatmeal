@@ -96,7 +96,7 @@ router.post("/custom-tasks", requireAuth, async (req: AuthedRequest, res, next) 
       }
     }
 
-    const newBadges = await prisma.$transaction((tx) => checkAndAwardBadges(tx, userId));
+    const newBadges = await prisma.$transaction((tx) => checkAndAwardBadges(tx, userId), { timeout: 15000 });
 
     res.status(201).json({ customTask, newBadges });
   } catch (err) {
@@ -208,7 +208,7 @@ router.patch("/custom-tasks/instance/:instanceId", requireAuth, async (req: Auth
         newBadges,
         graceTokenConsumed,
       };
-    });
+    }, { timeout: 15000 });
 
     res.json(result);
   } catch (err) {

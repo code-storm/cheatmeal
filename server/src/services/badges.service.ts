@@ -1,4 +1,4 @@
-import type { Prisma } from "@prisma/client";
+import type { Prisma, PregnancyProfile } from "@prisma/client";
 import { computeCurrentWeek } from "./pregnancyWeek.service";
 
 type TxClient = Prisma.TransactionClient;
@@ -10,7 +10,17 @@ export interface UnlockedBadgeDTO {
   icon: string;
 }
 
-async function isCriteriaMet(tx: TxClient, userId: string, criteriaKey: string): Promise<boolean> {
+// `profile` is fetched once by the caller (checkAndAwardBadges) rather than
+// per-branch here - each extra findUnique inside this function used to be
+// its own network round-trip to the database, and against a networked
+// Turso database (not a local SQLite file) that added up across the up to
+// 13 badges checked per call, enough to blow the transaction's timeout.
+async function isCriteriaMet(
+  tx: TxClient,
+  userId: string,
+  criteriaKey: string,
+  profile: PregnancyProfile | null
+): Promise<boolean> {
   switch (criteriaKey) {
     case "FIRST_TASK": {
       const [taskCount, instanceCount] = await Promise.all([
@@ -32,14 +42,10 @@ async function isCriteriaMet(tx: TxClient, userId: string, criteriaKey: string):
         return all.length > 0 && all.every((t) => t.status === "COMPLETED");
       });
     }
-    case "STREAK_7": {
-      const profile = await tx.pregnancyProfile.findUnique({ where: { userId } });
+    case "STREAK_7":
       return (profile?.longestStreak ?? 0) >= 7;
-    }
-    case "STREAK_30": {
-      const profile = await tx.pregnancyProfile.findUnique({ where: { userId } });
+    case "STREAK_30":
       return (profile?.longestStreak ?? 0) >= 30;
-    }
     case "CHALLENGE_ROOKIE": {
       const count = await tx.dailyChallengeInstance.count({ where: { userId, status: "COMPLETED" } });
       return count >= 1;
@@ -56,35 +62,21 @@ async function isCriteriaMet(tx: TxClient, userId: string, criteriaKey: string):
       const count = await tx.customTask.count({ where: { userId } });
       return count >= 1;
     }
-    case "CENTURION": {
-      const profile = await tx.pregnancyProfile.findUnique({ where: { userId } });
+    case "CENTURION":
       return (profile?.totalPointsEarned ?? 0) >= 100;
-    }
     // Journey milestones: time-based (tied to the real pregnancy calendar),
     // not action-based like every other criteria here - can become true
     // without the user doing anything, so there may be a short lag before
     // the next action call site evaluates it. Accepted trade; see
     // badges.ts content comments.
-    case "TRIMESTER_2_REACHED": {
-      const profile = await tx.pregnancyProfile.findUnique({ where: { userId } });
-      if (!profile) return false;
-      return computeCurrentWeek(profile.lmpDate, new Date()) >= 14;
-    }
-    case "WEEK_20_HALFWAY": {
-      const profile = await tx.pregnancyProfile.findUnique({ where: { userId } });
-      if (!profile) return false;
-      return computeCurrentWeek(profile.lmpDate, new Date()) >= 20;
-    }
-    case "TRIMESTER_3_REACHED": {
-      const profile = await tx.pregnancyProfile.findUnique({ where: { userId } });
-      if (!profile) return false;
-      return computeCurrentWeek(profile.lmpDate, new Date()) >= 28;
-    }
-    case "FULL_TERM_REACHED": {
-      const profile = await tx.pregnancyProfile.findUnique({ where: { userId } });
-      if (!profile) return false;
-      return computeCurrentWeek(profile.lmpDate, new Date()) >= 37;
-    }
+    case "TRIMESTER_2_REACHED":
+      return profile ? computeCurrentWeek(profile.lmpDate, new Date()) >= 14 : false;
+    case "WEEK_20_HALFWAY":
+      return profile ? computeCurrentWeek(profile.lmpDate, new Date()) >= 20 : false;
+    case "TRIMESTER_3_REACHED":
+      return profile ? computeCurrentWeek(profile.lmpDate, new Date()) >= 28 : false;
+    case "FULL_TERM_REACHED":
+      return profile ? computeCurrentWeek(profile.lmpDate, new Date()) >= 37 : false;
     default:
       return false;
   }
@@ -98,9 +90,10 @@ async function isCriteriaMet(tx: TxClient, userId: string, criteriaKey: string):
  * on THIS call, so callers can surface a toast without re-fetching.
  */
 export async function checkAndAwardBadges(tx: TxClient, userId: string): Promise<UnlockedBadgeDTO[]> {
-  const [allBadges, userBadges] = await Promise.all([
+  const [allBadges, userBadges, profile] = await Promise.all([
     tx.badge.findMany({ where: { isActive: true } }),
     tx.userBadge.findMany({ where: { userId }, select: { badgeId: true } }),
+    tx.pregnancyProfile.findUnique({ where: { userId } }),
   ]);
 
   const unlockedIds = new Set(userBadges.map((ub) => ub.badgeId));
@@ -110,7 +103,7 @@ export async function checkAndAwardBadges(tx: TxClient, userId: string): Promise
   const newlyUnlocked: UnlockedBadgeDTO[] = [];
 
   for (const badge of candidates) {
-    const met = await isCriteriaMet(tx, userId, badge.criteriaKey);
+    const met = await isCriteriaMet(tx, userId, badge.criteriaKey, profile);
     if (met) {
       await tx.userBadge.create({ data: { userId, badgeId: badge.id } });
       newlyUnlocked.push({

@@ -79,7 +79,7 @@ router.patch("/challenges/instance/:id", requireAuth, async (req: AuthedRequest,
 
       const profile = await tx.pregnancyProfile.findUnique({ where: { userId } });
       return { challenge: updated, pointsBalance: profile?.pointsBalance ?? 0, newBadges };
-    });
+    }, { timeout: 15000 });
 
     res.json(result);
   } catch (err) {

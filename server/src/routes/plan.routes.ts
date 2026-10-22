@@ -186,7 +186,7 @@ router.patch("/plan/task/:taskId", requireAuth, async (req: AuthedRequest, res, 
         newBadges,
         graceTokenConsumed,
       };
-    });
+    }, { timeout: 15000 });
 
     res.json(result);
   } catch (err) {
@@ -299,7 +299,7 @@ router.post("/plan/task/:taskId/swap", requireAuth, async (req: AuthedRequest, r
       });
 
       return updatedTask;
-    });
+    }, { timeout: 15000 });
 
     res.json({
       task: {

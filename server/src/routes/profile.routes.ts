@@ -47,7 +47,7 @@ router.get("/profile", requireAuth, async (req: AuthedRequest, res, next) => {
           where: { userId },
           data: { lastLoginBonusDate: todayStr },
         });
-      });
+      }, { timeout: 15000 });
       loginBonusAwarded = { points: LOGIN_BONUS_POINTS };
     }
 
