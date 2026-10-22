@@ -4,7 +4,12 @@ services:
     runtime: node
     plan: free
     rootDir: server
-    buildCommand: npm ci && npx prisma generate && npm run build
+    # --include=dev overrides npm's default of silently skipping
+    # devDependencies whenever NODE_ENV=production is set (see the
+    # envVars below) - typescript/prisma/tsx all live there but are
+    # genuinely needed to build and start this service, not just for
+    # local development.
+    buildCommand: npm ci --include=dev && npx prisma generate && npm run build
     startCommand: npm start
     envVars:
       - key: TURSO_DATABASE_URL
