@@ -1,4 +1,4 @@
-import type { TaskType } from "../types";
+import type { DietPreference, TaskType } from "../types";
 
 interface TaskTypeMeta {
   label: string;
@@ -14,4 +14,11 @@ export const TASK_TYPE_META: Record<TaskType, TaskTypeMeta> = {
   EXERCISE: { label: "Exercise", icon: "🧘", className: "task-type--exercise" },
   HABIT: { label: "Habit", icon: "💧", className: "task-type--habit" },
   GROOMING: { label: "Grooming", icon: "✨", className: "task-type--grooming" },
+};
+
+export const DIET_PREFERENCE_META: Record<DietPreference, { label: string }> = {
+  VEGETARIAN: { label: "Vegetarian" },
+  EGGETARIAN: { label: "Eggetarian (veg + eggs)" },
+  NON_VEGETARIAN: { label: "Non-vegetarian" },
+  NO_RESTRICTION: { label: "Both / no restriction" },
 };

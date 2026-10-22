@@ -1,4 +1,6 @@
 import type { FormEvent, ReactNode } from "react";
+import { motion } from "framer-motion";
+import { PAGE_TRANSITION } from "../utils/motion";
 
 interface AuthCardProps {
   title: string;
@@ -19,7 +21,12 @@ export function AuthCard({
 }: AuthCardProps) {
   return (
     <div className="full-page-center">
-      <div className="auth-card">
+      <motion.div
+        className="auth-card glass-glow"
+        initial={{ opacity: 0, scale: 0.96 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={PAGE_TRANSITION}
+      >
         <h1 className="auth-card__title">{title}</h1>
         {subtitle && <p className="auth-card__subtitle">{subtitle}</p>}
         <form className="auth-card__form" onSubmit={onSubmit}>
@@ -31,7 +38,7 @@ export function AuthCard({
           )}
         </form>
         {footer && <div className="auth-card__footer">{footer}</div>}
-      </div>
+      </motion.div>
     </div>
   );
 }

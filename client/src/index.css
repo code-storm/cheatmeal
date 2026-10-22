@@ -1,33 +1,48 @@
 /* ----------------------------------------------------------------------
    CheatMeal — design tokens & global styles
-   Warm, calm palette: terracotta + cream + sage, a soft serif for headings
-   to feel considered rather than clinical, generous whitespace, rounded
-   shapes. No heavy UI framework — hand-rolled, intentional CSS.
+   "Liquid Glass": a neutral base material (per Apple's macOS Tahoe / iOS 26
+   language) — heavier frosted blur+saturation, soft specular highlights,
+   depth via layered shadow rather than borders, color reserved for a
+   single accent that skins/dark-mode recompose. Token *names* are kept
+   stable across rounds wherever possible so component CSS rarely needs
+   touching — only values change.
    ---------------------------------------------------------------------- */
 
 @import url("https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400..600&family=Inter:wght@400;500;600;700&display=swap");
 
 :root {
-  /* Palette */
-  --color-cream: #fdf8f1;
-  --color-cream-deep: #f7eee1;
-  --color-paper: #fffdfa;
-  --color-terracotta: #c96f52;
-  --color-terracotta-dark: #a85339;
-  --color-terracotta-light: #f0dccf;
-  --color-sage: #7a9478;
-  --color-sage-dark: #5e7a5c;
-  --color-sage-light: #e3ebe0;
-  --color-sky: #6f93a8;
-  --color-sky-light: #dfeaf0;
-  --color-plum: #8d6a93;
-  --color-plum-light: #ebe1ee;
-  --color-ink: #3a332e;
-  --color-ink-soft: #6b6158;
-  --color-ink-faint: #9d9387;
-  --color-border: #e7dccb;
-  --color-danger: #b8534a;
-  --color-success: #5e8a5a;
+  color-scheme: light;
+
+  /* Neutral surface ramp */
+  --color-cream: #f4f5f8;
+  --color-cream-deep: #e9eaef;
+  --color-paper: #ffffff;
+
+  /* Ink / text ramp */
+  --color-ink: #1c1d22;
+  --color-ink-soft: #5a5d68;
+  --color-ink-faint: #94979f;
+
+  /* Accent system — the one place skins/color reserved for key actions lives */
+  --accent: #6b6f8a;
+  --accent-dark: #4f5268;
+  --accent-light: #e4e5ec;
+  --accent-contrast: #ffffff;
+
+  /* Fixed secondary semantic ramp (success/completed) — not skin-reactive */
+  --color-sage: #4fae8a;
+  --color-sage-dark: #3a8a6c;
+  --color-sage-light: #dcf0e7;
+
+  /* Fixed categorical colors (task types, difficulty tags) — not skin-reactive */
+  --color-sky: #5b8ad1;
+  --color-sky-light: #e2ecfa;
+  --color-plum: #b06bc9;
+  --color-plum-light: #f2e3f7;
+
+  --color-border: rgba(20, 20, 30, 0.08);
+  --color-danger: #d6454a;
+  --color-success: #3a8a6c;
 
   --font-heading: "Fraunces", "Iowan Old Style", Georgia, serif;
   --font-body: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -35,8 +50,161 @@
   --radius-sm: 10px;
   --radius-md: 16px;
   --radius-lg: 24px;
-  --shadow-soft: 0 2px 12px rgba(90, 65, 45, 0.06), 0 1px 2px rgba(90, 65, 45, 0.04);
-  --shadow-raised: 0 8px 24px rgba(90, 65, 45, 0.1), 0 2px 6px rgba(90, 65, 45, 0.06);
+  --radius-pill: 999px;
+
+  /* Liquid Glass surfaces */
+  --glass-bg: rgba(255, 255, 255, 0.46);
+  --glass-bg-strong: rgba(255, 255, 255, 0.64);
+  --glass-border: rgba(255, 255, 255, 0.55);
+  --glass-highlight: rgba(255, 255, 255, 0.55);
+  --glass-blur: 28px;
+  --glass-blur-light: 18px;
+  --glass-saturate: 1.6;
+
+  --shadow-soft: 0 4px 24px rgba(20, 20, 30, 0.07), 0 1px 2px rgba(20, 20, 30, 0.04);
+  --shadow-raised: 0 16px 48px rgba(20, 20, 30, 0.12), 0 2px 8px rgba(20, 20, 30, 0.06);
+  --shadow-glow: 0 0 0 1px var(--glass-border), 0 8px 28px color-mix(in srgb, var(--accent) 35%, transparent);
+
+  /* Glass bezel bevel: a stack of tiny inset shadows mixing a light "shine"
+     color and a dark "umbra" color at small, mostly-negative offsets - the
+     same recipe real-glass CSS demos (e.g. fooontic's Liquid Glass
+     Switcher) use for the edge-highlight look, rather than a flat 1-2px
+     ring. --glass-reflex-light/-dark are pure multipliers (not colors) so
+     light/dark mode only need to flip two numbers, not redeclare the whole
+     shadow stack - see the dark override below. */
+  --glass-shine: #ffffff;
+  --glass-umbra: #1c1d22;
+  --glass-reflex-light: 1;
+  --glass-reflex-dark: 1;
+  --shadow-glass-rim: inset 0 0 0 1px
+      color-mix(in srgb, var(--glass-shine) calc(var(--glass-reflex-light) * 10%), transparent),
+    inset 1.5px 2.5px 0 -1.5px color-mix(in srgb, var(--glass-shine) calc(var(--glass-reflex-light) * 85%), transparent),
+    inset -1.5px -1px 0 -1.5px color-mix(in srgb, var(--glass-shine) calc(var(--glass-reflex-light) * 75%), transparent),
+    inset -2px -6px 1px -5px color-mix(in srgb, var(--glass-shine) calc(var(--glass-reflex-light) * 55%), transparent),
+    inset -0.5px 1.5px 3px -1px color-mix(in srgb, var(--glass-umbra) calc(var(--glass-reflex-dark) * 10%), transparent),
+    inset 0 -3px 2px -2px color-mix(in srgb, var(--glass-umbra) calc(var(--glass-reflex-dark) * 8%), transparent);
+
+  /* Pointer-tracked specular highlight coordinates — set by usePointerGlow */
+  --pointer-x: 50%;
+  --pointer-y: 50%;
+
+  /* Aurora background stops + glass hue tint — the "no skin" default.
+     Skins override these (plus --accent*) for a full theme pack instead
+     of just a color swap; see the Skins section near the end of this file. */
+  --aurora-stop-1: #e7e8ee;
+  --aurora-stop-2: #eef0f3;
+  --aurora-stop-3: #f1eef2;
+  --glass-tint: #ffffff;
+}
+
+:root[data-color-scheme="dark"] {
+  color-scheme: dark;
+
+  --color-cream: #15161b;
+  --color-cream-deep: #1d1e24;
+  --color-paper: #23242b;
+
+  --color-ink: #f0f1f5;
+  --color-ink-soft: #b7b9c4;
+  --color-ink-faint: #76788a;
+
+  --accent: #9aa0d4;
+  --accent-dark: #c3c7ea;
+  --accent-light: #363a52;
+  --accent-contrast: #15161b;
+
+  --color-sage: #6fd1ac;
+  --color-sage-dark: #9be6c8;
+  --color-sage-light: #1e3a30;
+
+  --color-sky: #7fa8e8;
+  --color-sky-light: #22304a;
+  --color-plum: #d191e8;
+  --color-plum-light: #3a2a42;
+
+  --color-border: rgba(255, 255, 255, 0.1);
+  --color-danger: #e8706f;
+  --color-success: #9be6c8;
+
+  --glass-bg: rgba(38, 40, 48, 0.55);
+  --glass-bg-strong: rgba(38, 40, 48, 0.72);
+  --glass-border: rgba(255, 255, 255, 0.14);
+  --glass-highlight: rgba(255, 255, 255, 0.22);
+  --glass-blur: 24px;
+  --glass-blur-light: 16px;
+  --glass-saturate: 1.3;
+
+  --shadow-soft: 0 4px 24px rgba(0, 0, 0, 0.35), 0 1px 2px rgba(0, 0, 0, 0.25);
+  --shadow-raised: 0 16px 48px rgba(0, 0, 0, 0.5), 0 2px 8px rgba(0, 0, 0, 0.3);
+  --shadow-glow: 0 0 0 1px var(--glass-border), 0 8px 28px color-mix(in srgb, var(--accent) 30%, transparent);
+
+  /* Same --shadow-glass-rim recipe as :root - only the two reflex
+     multipliers change. Against a near-black background the dark/umbra
+     side of the bevel barely reads, so it's pushed up; the light/shine
+     side is dialed down so it doesn't look like a bright plastic edge. */
+  --glass-shine: #ffffff;
+  --glass-umbra: #000000;
+  --glass-reflex-light: 0.35;
+  --glass-reflex-dark: 2;
+
+  --aurora-stop-1: #1e2030;
+  --aurora-stop-2: #202733;
+  --aurora-stop-3: #241f2b;
+  --glass-tint: #ffffff;
+}
+
+/* ------------------------------ Glass glow utility -------------------------- */
+/* Cursor-tracked specular highlight on major glass panels. --pointer-x/-y are
+   viewport-relative percentages written by usePointerGlow (AppLayout.tsx). */
+
+.glass-glow {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.glass-glow::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  /* Negative, not 0: within the isolated stacking context this must paint
+     BEHIND the card's own (non-positioned, in-flow) text content. z-index:0
+     here previously painted above plain text per normal paint order,
+     washing it out under the highlight on hover. */
+  z-index: -1;
+  background: radial-gradient(circle at var(--pointer-x) var(--pointer-y), var(--glass-highlight) 0%, transparent 45%);
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+
+.glass-glow:hover::before {
+  opacity: 0.85;
+}
+
+/* Static corner glint - unlike ::before, always on (not hover-gated), so
+   touch devices (where ::before is disabled below) still get a specular
+   highlight cue, closing the gap where touch surfaces had none at all. */
+.glass-glow::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: -1;
+  background: radial-gradient(circle at 12% 8%, var(--glass-highlight) 0%, transparent 35%);
+  opacity: 0.5;
+}
+
+@media not all and (hover: hover) and (pointer: fine) {
+  .glass-glow::before {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .glass-glow::before {
+    display: none;
+  }
 }
 
 * {
@@ -50,12 +218,55 @@ body {
 }
 
 body {
-  background: var(--color-cream);
+  background: radial-gradient(circle at 15% 20%, var(--aurora-stop-1) 0%, transparent 45%),
+    radial-gradient(circle at 85% 15%, var(--aurora-stop-2) 0%, transparent 50%),
+    radial-gradient(circle at 50% 90%, var(--aurora-stop-3) 0%, transparent 55%), var(--color-cream);
+  background-attachment: fixed;
+  background-size: 140% 140%;
+  animation: aurora-drift 24s ease-in-out infinite alternate;
   color: var(--color-ink);
   font-family: var(--font-body);
   font-size: 16px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+@keyframes aurora-drift {
+  from {
+    background-position: 0% 0%, 0% 0%, 0% 0%;
+  }
+  to {
+    background-position: 6% 4%, -4% 6%, 3% -3%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body {
+    animation: none;
+  }
+}
+
+/* ------------------------------ Ambient FX layer ----------------------------- */
+/* One always-mounted, full-viewport layer (rendered once by AppLayout.tsx)
+   behind all content. Each skin paints its own signature ambient animation
+   into this layer via a body[data-theme="..."] .ambient-fx rule further
+   down - inactive skins' selectors simply never match, so no JS gating is
+   needed, mirroring how the accent/aurora tokens already swap per skin. */
+
+.ambient-fx {
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  pointer-events: none;
+  background-repeat: no-repeat;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ambient-fx {
+    animation: none !important;
+    background-image: none !important;
+  }
 }
 
 #root {
@@ -107,27 +318,42 @@ input {
 }
 
 .app-header {
-  background: var(--color-paper);
-  border-bottom: 1px solid var(--color-border);
   position: sticky;
-  top: 0;
+  top: 12px;
   z-index: 10;
+  padding: 0 16px;
 }
 
 .app-header__inner {
-  max-width: 760px;
+  /* Widened from 820px: adding an icon span to every nav link (for parity
+     with the bottom-bar's icon+label treatment) made the row wider than
+     the old pill at this width, pushing the status icons off-screen. */
+  max-width: 1040px;
   margin: 0 auto;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 24px;
+  gap: 16px;
+  padding: 12px 22px;
+  background: color-mix(in srgb, var(--glass-tint) 12%, var(--glass-bg-strong));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-pill);
+  box-shadow: var(--shadow-raised), var(--shadow-glass-rim);
+}
+
+@supports (backdrop-filter: url(#liquid-glass-edge)) {
+  .app-header__inner {
+    backdrop-filter: url(#liquid-glass-edge) blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  }
 }
 
 .app-logo {
   font-family: var(--font-heading);
   font-size: 1.3rem;
   font-weight: 600;
-  color: var(--color-terracotta-dark);
+  color: var(--accent-dark);
 }
 
 .app-nav {
@@ -135,7 +361,17 @@ input {
   gap: 20px;
 }
 
+/* Two renders of the same nav items (see AppLayout.tsx): the top pill nav
+   is the default, the fixed bottom bar only takes over at the mobile/
+   tablet breakpoint below. */
+.app-nav--bottom {
+  display: none;
+}
+
 .app-nav__link {
+  display: flex;
+  align-items: center;
+  gap: 5px;
   color: var(--color-ink-soft);
   text-decoration: none;
   font-weight: 500;
@@ -146,12 +382,17 @@ input {
 }
 
 .app-nav__link:hover {
-  color: var(--color-terracotta-dark);
+  color: var(--accent-dark);
 }
 
 .app-nav__link--active {
-  color: var(--color-terracotta-dark);
-  border-bottom-color: var(--color-terracotta);
+  color: var(--accent-dark);
+  border-bottom-color: var(--accent);
+}
+
+.app-nav__icon {
+  font-size: 0.95rem;
+  line-height: 1;
 }
 
 .app-main {
@@ -177,6 +418,17 @@ input {
   margin-top: 6px;
 }
 
+.wardrobe-tier-breakdown {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.wardrobe-tier-breakdown__item {
+  font-weight: 700;
+}
+
 /* --------------------------------- Forms ------------------------------ */
 
 .field {
@@ -200,24 +452,26 @@ input {
 .field input,
 .field select {
   padding: 11px 14px;
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius-sm);
-  background: var(--color-paper);
+  background: color-mix(in srgb, var(--glass-tint) 12%, var(--glass-bg));
+  backdrop-filter: blur(var(--glass-blur-light)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur-light)) saturate(var(--glass-saturate));
   color: var(--color-ink);
   outline: none;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .field input:focus {
-  border-color: var(--color-terracotta);
-  box-shadow: 0 0 0 3px var(--color-terracotta-light);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-light);
 }
 
 .form-error {
   color: var(--color-danger);
   font-size: 0.88rem;
-  background: #fbeae7;
-  border: 1px solid #f0cfc9;
+  background: color-mix(in srgb, var(--color-danger) 12%, var(--glass-bg));
+  border: 1px solid color-mix(in srgb, var(--color-danger) 30%, transparent);
   border-radius: var(--radius-sm);
   padding: 10px 12px;
   margin-top: 4px;
@@ -234,11 +488,17 @@ input {
   font-weight: 600;
   font-size: 0.95rem;
   cursor: pointer;
-  transition: transform 0.1s ease, background 0.15s ease, box-shadow 0.15s ease;
+  transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1), background 0.15s ease, box-shadow 0.15s ease;
 }
 
-.btn:active {
-  transform: translateY(1px);
+@media (hover: hover) and (pointer: fine) {
+  .btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+  }
+}
+
+.btn:active:not(:disabled) {
+  transform: scale(0.97);
 }
 
 .btn:disabled {
@@ -247,24 +507,27 @@ input {
 }
 
 .btn--primary {
-  background: var(--color-terracotta);
+  background: var(--accent);
   color: #fff;
   box-shadow: var(--shadow-soft);
 }
 
 .btn--primary:hover:not(:disabled) {
-  background: var(--color-terracotta-dark);
+  background: var(--accent-dark);
+  box-shadow: var(--shadow-glow);
 }
 
 .btn--secondary {
-  background: var(--color-paper);
+  background: color-mix(in srgb, var(--glass-tint) 12%, var(--glass-bg));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
   color: var(--color-ink);
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--glass-border);
 }
 
 .btn--secondary:hover:not(:disabled) {
-  border-color: var(--color-terracotta);
-  color: var(--color-terracotta-dark);
+  border-color: var(--accent);
+  color: var(--accent-dark);
 }
 
 .btn--logout {
@@ -277,9 +540,12 @@ input {
 .onboarding-card {
   width: 100%;
   max-width: 420px;
-  background: var(--color-paper);
+  background: color-mix(in srgb, var(--glass-tint) 12%, var(--glass-bg-strong));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-raised);
+  box-shadow: var(--shadow-raised), var(--shadow-glass-rim);
   padding: 40px 36px;
 }
 
@@ -314,7 +580,7 @@ input {
 }
 
 .auth-card__footer a {
-  color: var(--color-terracotta-dark);
+  color: var(--accent-dark);
   font-weight: 600;
   text-decoration: none;
 }
@@ -329,8 +595,12 @@ input {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  background: linear-gradient(135deg, var(--color-terracotta-light), var(--color-cream-deep));
+  background: linear-gradient(135deg, var(--accent-light), var(--color-cream-deep));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-soft), var(--shadow-glass-rim);
   padding: 28px 28px 24px;
 }
 
@@ -339,7 +609,7 @@ input {
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: var(--color-terracotta-dark);
+  color: var(--accent-dark);
 }
 
 .today-header__title {
@@ -367,15 +637,15 @@ input {
 
 .progress__track {
   height: 10px;
-  background: rgba(255, 255, 255, 0.6);
-  border-radius: 999px;
+  background: color-mix(in srgb, var(--glass-tint) 12%, var(--glass-bg));
+  border-radius: var(--radius-pill);
   overflow: hidden;
 }
 
 .progress__fill {
   height: 100%;
-  background: var(--color-terracotta);
-  border-radius: 999px;
+  background: var(--accent);
+  border-radius: var(--radius-pill);
   transition: width 0.3s ease;
 }
 
@@ -384,7 +654,7 @@ input {
 }
 
 .progress-ring__fill {
-  stroke: var(--color-sage-dark);
+  stroke: var(--accent);
   transition: stroke-dashoffset 0.3s ease;
 }
 
@@ -423,7 +693,10 @@ input {
   color: var(--color-ink-soft);
   text-align: center;
   padding: 24px;
-  background: var(--color-paper);
+  background: color-mix(in srgb, var(--glass-tint) 12%, var(--glass-bg));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius-md);
 }
 
@@ -431,17 +704,19 @@ input {
   display: flex;
   align-items: flex-start;
   gap: 14px;
-  background: var(--color-paper);
-  border: 1px solid var(--color-border);
+  background: color-mix(in srgb, var(--glass-tint) 12%, var(--glass-bg));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius-md);
   padding: 16px 18px;
-  box-shadow: var(--shadow-soft);
+  box-shadow: var(--shadow-soft), var(--shadow-glass-rim);
   transition: opacity 0.15s ease;
 }
 
 .task-row--completed {
   background: var(--color-sage-light);
-  border-color: #d4e2d1;
+  border-color: var(--color-sage);
 }
 
 .task-row--completed .task-row__name {
@@ -473,7 +748,7 @@ input {
 .task-row__time {
   font-size: 0.82rem;
   font-weight: 700;
-  color: var(--color-terracotta-dark);
+  color: var(--accent-dark);
   letter-spacing: 0.02em;
 }
 
@@ -483,7 +758,7 @@ input {
   text-transform: uppercase;
   letter-spacing: 0.03em;
   padding: 2px 8px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
 }
 
 .task-pill--done {
@@ -492,7 +767,7 @@ input {
 }
 
 .task-pill--skipped {
-  background: #ece7e2;
+  background: var(--color-cream-deep);
   color: var(--color-ink-faint);
 }
 
@@ -516,8 +791,10 @@ input {
 }
 
 .task-action {
-  border: 1px solid var(--color-border);
-  background: var(--color-paper);
+  border: 1px solid var(--glass-border);
+  background: color-mix(in srgb, var(--glass-tint) 12%, var(--glass-bg));
+  backdrop-filter: blur(var(--glass-blur-light)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur-light)) saturate(var(--glass-saturate));
   color: var(--color-ink-soft);
   border-radius: var(--radius-sm);
   padding: 7px 14px;
@@ -529,7 +806,7 @@ input {
 }
 
 .task-action:hover:not(:disabled) {
-  border-color: var(--color-terracotta);
+  border-color: var(--accent);
 }
 
 .task-action:disabled {
@@ -549,6 +826,69 @@ input {
   color: #fff;
 }
 
+.task-action--swap:hover:not(:disabled) {
+  border-color: var(--color-plum);
+  color: var(--color-plum);
+}
+
+/* ------------------------------ Macro pills ------------------------------ */
+
+.task-row__macros {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+}
+
+.macro-pill {
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+}
+
+.macro-pill--calories {
+  background: var(--accent-light);
+  color: var(--accent-dark);
+}
+
+.macro-pill--protein {
+  background: var(--color-sage-light);
+  color: var(--color-sage-dark);
+}
+
+.macro-pill--carbs {
+  background: var(--color-sky-light);
+  color: var(--color-ink-soft);
+}
+
+.macro-pill--fat {
+  background: var(--color-plum-light);
+  color: var(--color-ink-soft);
+}
+
+/* --------------------------- Macro history page --------------------------- */
+
+.macro-date-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.macro-date-nav__current {
+  font-weight: 600;
+  color: var(--color-ink);
+}
+
+.macro-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
 /* --------------------------- Task type badges --------------------------- */
 
 .task-type-badge {
@@ -563,7 +903,7 @@ input {
 }
 
 .task-type--meal {
-  background: var(--color-terracotta-light);
+  background: var(--accent-light);
 }
 
 .task-type--exercise {
@@ -587,8 +927,10 @@ input {
 }
 
 .history-day {
-  background: var(--color-paper);
-  border: 1px solid var(--color-border);
+  background: color-mix(in srgb, var(--glass-tint) 12%, var(--glass-bg));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius-md);
   overflow: hidden;
 }
@@ -647,9 +989,12 @@ input {
 /* -------------------------------- Profile -------------------------------- */
 
 .profile-card {
-  background: var(--color-paper);
-  border: 1px solid var(--color-border);
+  background: color-mix(in srgb, var(--glass-tint) 12%, var(--glass-bg));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-soft), var(--shadow-glass-rim);
   padding: 24px 26px;
   display: flex;
   flex-direction: column;
@@ -715,17 +1060,44 @@ input {
 }
 
 .loading-spinner {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  border: 3px solid var(--color-terracotta-light);
-  border-top-color: var(--color-terracotta);
-  animation: spin 0.8s linear infinite;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
+.loading-spinner__dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: var(--shadow-glow);
+  animation: glass-pulse 1.1s ease-in-out infinite;
+}
+
+.loading-spinner__dot:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.loading-spinner__dot:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+@keyframes glass-pulse {
+  0%,
+  100% {
+    transform: scale(0.7);
+    opacity: 0.4;
+  }
+  50% {
+    transform: scale(1.15);
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loading-spinner__dot {
+    animation: none;
+    opacity: 0.9;
   }
 }
 
@@ -736,9 +1108,11 @@ input {
   gap: 10px;
   text-align: center;
   padding: 40px 24px;
-  background: var(--color-paper);
+  background: color-mix(in srgb, var(--glass-tint) 12%, var(--glass-bg));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
   border-radius: var(--radius-md);
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--glass-border);
 }
 
 .error-state__title {
@@ -752,11 +1126,116 @@ input {
 
 /* --------------------------------- Responsive ------------------------------ */
 
+@media (max-width: 860px) {
+  .app-header {
+    top: 8px;
+    padding: 0 10px;
+  }
+
+  .app-header__inner {
+    padding: 10px 16px;
+    gap: 10px;
+  }
+
+  .app-header__status {
+    gap: 6px;
+  }
+
+  .level-progress--compact__name {
+    display: none;
+  }
+
+  /* Instagram-style fixed bottom tab bar. .app-nav--top is nested inside
+     .app-header__inner, whose backdrop-filter establishes a new containing
+     block - a position:fixed descendant of it can never actually anchor
+     to the viewport. So the bottom bar is a second render of the same nav
+     items (see AppLayout.tsx), placed as a top-level sibling of the header/
+     main, and it's that element - not the header's own nav - that becomes
+     fixed here. */
+  .app-nav--top {
+    display: none;
+  }
+
+  .app-nav--bottom {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 10;
+    display: flex;
+    justify-content: space-around;
+    gap: 0;
+    padding: 6px 8px calc(6px + env(safe-area-inset-bottom));
+    background: color-mix(in srgb, var(--glass-tint) 12%, var(--glass-bg-strong));
+    backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+    border-top: 1px solid var(--glass-border);
+    box-shadow: var(--shadow-raised), var(--shadow-glass-rim);
+  }
+
+  @supports (backdrop-filter: url(#liquid-glass-edge)) {
+    .app-nav--bottom {
+      backdrop-filter: url(#liquid-glass-edge) blur(var(--glass-blur)) saturate(var(--glass-saturate));
+    }
+  }
+
+  .app-nav__link {
+    flex: 1;
+    flex-direction: column;
+    gap: 2px;
+    align-items: center;
+    justify-content: center;
+    border-bottom: none;
+    padding: 6px 4px;
+    font-size: 0.68rem;
+    text-align: center;
+  }
+
+  .app-nav__link--active {
+    border-bottom-color: transparent;
+  }
+
+  .app-nav__icon {
+    font-size: 1.15rem;
+    padding: 4px 10px;
+    border-radius: var(--radius-pill);
+    transition: background-color 0.15s ease;
+  }
+
+  .app-nav__link--active .app-nav__icon {
+    background: var(--accent-light);
+  }
+
+  .app-main {
+    padding-bottom: calc(76px + env(safe-area-inset-bottom));
+  }
+}
+
 @media (max-width: 560px) {
-  .app-header__inner,
   .app-main {
     padding-left: 16px;
     padding-right: 16px;
+  }
+
+  .app-header {
+    padding: 0 8px;
+  }
+
+  .app-header__inner {
+    flex-wrap: wrap;
+    justify-content: center;
+    row-gap: 8px;
+    padding: 10px 16px;
+    border-radius: var(--radius-lg);
+  }
+
+  .app-logo {
+    order: 1;
+    margin-right: auto;
+  }
+
+  .app-header__status {
+    order: 2;
   }
 
   .task-row {
@@ -781,5 +1260,1017 @@ input {
   .auth-card,
   .onboarding-card {
     padding: 28px 22px;
+  }
+}
+
+/* ------------------------------ Gamification ------------------------------ */
+
+.task-pill--points {
+  background: var(--accent-light);
+  color: var(--accent-dark);
+}
+
+.app-header__status {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.color-scheme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid var(--glass-border);
+  background: color-mix(in srgb, var(--glass-tint) 12%, var(--glass-bg));
+  backdrop-filter: blur(var(--glass-blur-light)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur-light)) saturate(var(--glass-saturate));
+  color: var(--color-ink-soft);
+  cursor: pointer;
+  padding: 0;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.color-scheme-toggle:hover {
+  color: var(--accent-dark);
+  border-color: var(--accent);
+}
+
+.app-avatar {
+  font-size: 1.3rem;
+  line-height: 1;
+}
+
+.points-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--accent-light);
+  color: var(--accent-dark);
+  font-weight: 700;
+  font-size: 0.85rem;
+  padding: 5px 12px;
+  border-radius: var(--radius-pill);
+  box-shadow: var(--shadow-glow);
+}
+
+.reward-toast {
+  position: fixed;
+  top: 76px;
+  left: 50%;
+  z-index: 50;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--color-sage-dark);
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.95rem;
+  padding: 10px 20px;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-raised);
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.reward-toast__icon {
+  font-size: 1.1rem;
+}
+
+.reward-toast--badge {
+  background: var(--color-plum);
+}
+
+.reward-toast--level {
+  background: var(--accent-dark);
+}
+
+.reward-toast--login {
+  background: var(--color-sky);
+}
+
+.reward-toast--grace {
+  background: var(--accent);
+}
+
+.preview-pill {
+  position: fixed;
+  top: 76px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 51;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--accent);
+  color: var(--accent-contrast);
+  font-weight: 600;
+  font-size: 0.88rem;
+  padding: 8px 10px 8px 16px;
+  border-radius: var(--radius-pill);
+  box-shadow: var(--shadow-raised);
+  white-space: nowrap;
+}
+
+.preview-pill__exit {
+  border: none;
+  background: color-mix(in srgb, var(--accent-contrast) 22%, transparent);
+  color: var(--accent-contrast);
+  font-weight: 700;
+  font-size: 0.78rem;
+  padding: 5px 12px;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+}
+
+.preview-pill__exit:hover {
+  background: color-mix(in srgb, var(--accent-contrast) 32%, transparent);
+}
+
+/* -------------------------------- Rewards -------------------------------- */
+
+.rewards-section {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.rewards-section__heading {
+  font-family: var(--font-heading);
+  font-size: 1.2rem;
+  color: var(--color-ink);
+}
+
+.rewards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 16px;
+  align-items: stretch;
+}
+
+/* The direct grid item is a framer-motion wrapper div, not .reward-card
+   itself - it needs to be a flex container so .reward-card's height:100%
+   has something to fill, matching the tallest card in its row. */
+.rewards-grid > div {
+  display: flex;
+}
+
+.reward-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  text-align: center;
+  background: color-mix(in srgb, var(--glass-tint) 12%, var(--glass-bg));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  padding: 20px 16px;
+  box-shadow: var(--shadow-soft), var(--shadow-glass-rim);
+  /* Grid items stretch to the tallest card in their row by default, but
+     without an explicit height the card's own content only fills its
+     intrinsic size - leaving shorter cards' action buttons sitting higher
+     than taller cards' in the same row. height:100% fills the stretched
+     cell, and __actions below gets margin-top:auto so the button row
+     anchors to the bottom of every card regardless of description length. */
+  height: 100%;
+}
+
+.reward-card--locked {
+  opacity: 0.85;
+}
+
+.reward-card--unlocked {
+  border-color: var(--color-sage);
+  box-shadow: var(--shadow-glow);
+}
+
+.reward-card--previewing {
+  border-color: var(--accent);
+}
+
+.reward-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin-top: auto;
+  padding-top: 4px;
+  width: 100%;
+}
+
+.btn--secondary-active {
+  border-color: var(--accent);
+  color: var(--accent-dark);
+}
+
+.badge-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  text-align: center;
+  background: color-mix(in srgb, var(--glass-tint) 12%, var(--glass-bg));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  padding: 20px 16px;
+  box-shadow: var(--shadow-soft), var(--shadow-glass-rim);
+}
+
+.badge-card--locked {
+  opacity: 0.45;
+  filter: grayscale(0.6);
+}
+
+.badge-card--unlocked {
+  border-color: var(--color-plum);
+  box-shadow: var(--shadow-glow);
+}
+
+.badge-card__icon {
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.badge-card__name {
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+.badge-card__description {
+  font-size: 0.82rem;
+  color: var(--color-ink-soft);
+  line-height: 1.4;
+}
+
+.reward-card__icon {
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.reward-card__name {
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+.reward-card__description {
+  font-size: 0.82rem;
+  color: var(--color-ink-soft);
+  line-height: 1.4;
+  min-height: 2.2em;
+}
+
+.reward-card__cost {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--accent-dark);
+  margin-bottom: 4px;
+}
+
+.reward-card__cost--struck {
+  text-decoration: line-through;
+  color: var(--color-ink-faint);
+  font-weight: 500;
+}
+
+.reward-card__featured {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--accent-contrast);
+  background: var(--accent);
+  padding: 2px 10px;
+  border-radius: var(--radius-pill);
+  box-shadow: var(--shadow-glow);
+}
+
+.reward-card__limited {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--color-ink-soft);
+  background: var(--accent-light);
+  padding: 2px 10px;
+  border-radius: var(--radius-pill);
+}
+
+.reward-card--expired {
+  opacity: 0.6;
+}
+
+.reward-card__expired-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-ink-faint);
+}
+
+.reward-card__unlocked-badge {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--color-sage-dark);
+}
+
+.skin-swatch {
+  width: 64px;
+  height: 64px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1) inset, var(--shadow-soft);
+  margin: 2px 0 4px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.skin-swatch__icon {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3rem;
+  line-height: 1;
+  background: rgba(255, 255, 255, 0.28);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 50%;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+}
+
+.reward-card__rarity {
+  font-size: 0.66rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 2px 9px;
+  border-radius: var(--radius-pill);
+}
+
+.reward-card__rarity--common {
+  background: color-mix(in srgb, var(--accent) 12%, var(--glass-bg));
+  color: var(--color-ink-soft);
+}
+
+.reward-card__rarity--rare {
+  background: color-mix(in srgb, var(--accent) 26%, var(--glass-bg));
+  color: var(--accent-dark);
+}
+
+.reward-card__rarity--epic {
+  background: color-mix(in srgb, var(--accent) 42%, var(--glass-bg));
+  color: var(--accent-contrast);
+  font-weight: 800;
+}
+
+.reward-card__rarity--legendary {
+  background: var(--accent);
+  color: var(--accent-contrast);
+  font-weight: 800;
+  box-shadow: var(--shadow-glow);
+}
+
+.reward-card__progress {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 2px 0;
+}
+
+.reward-card__progress-track {
+  height: 6px;
+  border-radius: var(--radius-pill);
+  background: var(--glass-border);
+  overflow: hidden;
+}
+
+.reward-card__progress-fill {
+  height: 100%;
+  border-radius: var(--radius-pill);
+  background: var(--accent);
+  transition: width 0.3s ease;
+}
+
+.reward-card__progress-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--color-ink-faint);
+}
+
+/* ----------------------------- Custom tasks ------------------------------- */
+
+.today-add-task {
+  display: flex;
+}
+
+.custom-task-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  background: color-mix(in srgb, var(--glass-tint) 12%, var(--glass-bg));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  padding: 20px;
+  box-shadow: var(--shadow-soft), var(--shadow-glass-rim);
+}
+
+.custom-task-form__type-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.custom-task-form__type-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--color-border);
+  background: var(--color-paper);
+  color: var(--color-ink-soft);
+  border-radius: var(--radius-sm);
+  padding: 6px 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.custom-task-form__type-option--active.task-type--meal {
+  background: var(--accent-light);
+  border-color: var(--accent);
+  color: var(--accent-dark);
+}
+
+.custom-task-form__type-option--active.task-type--exercise {
+  background: var(--color-sky-light);
+  border-color: var(--color-sky);
+  color: var(--color-ink);
+}
+
+.custom-task-form__type-option--active.task-type--habit {
+  background: var(--color-sage-light);
+  border-color: var(--color-sage);
+  color: var(--color-sage-dark);
+}
+
+.custom-task-form__type-option--active.task-type--grooming {
+  background: var(--color-plum-light);
+  border-color: var(--color-plum);
+  color: var(--color-plum);
+}
+
+.custom-task-form__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+/* ------------------------------ Streak & level ----------------------------- */
+
+.streak-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--accent-light);
+  color: var(--accent-dark);
+  font-weight: 700;
+  font-size: 0.85rem;
+  padding: 5px 12px;
+  border-radius: var(--radius-pill);
+  box-shadow: var(--shadow-glow);
+}
+
+.level-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.level-progress--compact {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+  background: var(--color-sky-light);
+  color: var(--color-ink);
+  font-weight: 700;
+  font-size: 0.85rem;
+  padding: 5px 12px;
+  border-radius: var(--radius-pill);
+}
+
+.level-progress__header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+}
+
+.level-progress__icon {
+  font-size: 1.4rem;
+}
+
+.level-progress__next {
+  font-size: 0.82rem;
+  color: var(--color-ink-soft);
+}
+
+/* ------------------------------ Tips carousel ------------------------------ */
+
+.tips-carousel {
+  position: relative;
+  background: color-mix(in srgb, var(--glass-tint) 12%, var(--glass-bg));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-soft), var(--shadow-glass-rim);
+  padding: 20px 24px;
+  overflow: hidden;
+  min-height: 108px;
+}
+
+.tips-carousel__slide {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.tips-carousel__icon {
+  font-size: 1.8rem;
+  flex-shrink: 0;
+}
+
+.tips-carousel__title {
+  font-weight: 700;
+  font-size: 1rem;
+  margin-bottom: 4px;
+}
+
+.tips-carousel__body {
+  font-size: 0.88rem;
+  color: var(--color-ink-soft);
+  line-height: 1.45;
+}
+
+.tips-carousel__dots {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 14px;
+}
+
+.tips-carousel__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--color-border);
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+.tips-carousel__dot--active {
+  background: var(--accent);
+}
+
+/* ---------------------------- Daily challenges ----------------------------- */
+
+.challenges-card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  background: color-mix(in srgb, var(--glass-tint) 12%, var(--glass-bg));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-soft), var(--shadow-glass-rim);
+  padding: 20px 22px;
+}
+
+.challenges-card__heading {
+  font-family: var(--font-heading);
+  font-size: 1.15rem;
+}
+
+.challenges-card__list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.challenges-card__item {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: color-mix(in srgb, var(--glass-tint) 12%, var(--glass-bg-strong));
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+}
+
+.challenges-card__item--completed {
+  opacity: 0.7;
+}
+
+.challenges-card__row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.challenges-card__difficulty {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  flex-shrink: 0;
+}
+
+.challenges-card__difficulty--easy {
+  background: var(--color-sage-light);
+  color: var(--color-sage-dark);
+}
+
+.challenges-card__difficulty--moderate {
+  background: var(--color-sky-light);
+  color: var(--color-ink);
+}
+
+.challenges-card__difficulty--hard {
+  background: var(--color-plum-light);
+  color: var(--color-plum);
+}
+
+.challenges-card__title {
+  font-weight: 600;
+  font-size: 0.92rem;
+  flex: 1;
+}
+
+.challenges-card__bonus {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--accent-dark);
+  flex-shrink: 0;
+}
+
+.challenges-card__description {
+  font-size: 0.85rem;
+  color: var(--color-ink-soft);
+  line-height: 1.4;
+}
+
+.challenges-card__proof-input {
+  display: flex;
+  gap: 8px;
+}
+
+.challenges-card__proof-input input {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--glass-tint) 12%, var(--glass-bg));
+  font-size: 0.85rem;
+  color: var(--color-ink);
+  outline: none;
+}
+
+/* --------------------------------- Skins ---------------------------------- */
+/* Skins are full theme packs: accent + aurora background stops + a glass
+   hue tint + a signature ambient animation (painted into the always-mounted
+   .ambient-fx layer, see above). Each skin gets a light block and a
+   dark-mode compound-selector override, exactly like the old accent-only
+   skins did — just with more properties per block. No block exists for the
+   "default" skin — the bare :root / dark :root values ARE the default,
+   matching how data-theme is applied (AppLayout.tsx). Dark variants are
+   hand-authored, not derived from light via color-mix(): dark-mode accents
+   and aurora stops often need to go BRIGHTER, not darker, to read against
+   a near-black base, so a mechanical darkening formula would produce
+   muddy, same-looking skins. */
+
+/* ---- Light blocks ---- */
+
+body[data-theme="morning-bloom"] {
+  --accent: #c97a92;
+  --accent-dark: #a85b73;
+  --accent-light: #f8e3ea;
+  --aurora-stop-1: #f8dce3;
+  --aurora-stop-2: #fbe8ec;
+  --aurora-stop-3: #f3e0e6;
+  --glass-tint: #f6c9d6;
+}
+
+body[data-theme="meadow-fresh"] {
+  --accent: #4f9c6e;
+  --accent-dark: #3a7d54;
+  --accent-light: #ddf0e3;
+  --aurora-stop-1: #dcf0df;
+  --aurora-stop-2: #e8f5ea;
+  --aurora-stop-3: #eef7ee;
+  --glass-tint: #b8e0c0;
+}
+
+body[data-theme="lavender-dusk"] {
+  --accent: #8d6ab8;
+  --accent-dark: #6f4f96;
+  --accent-light: #ece2f6;
+  --aurora-stop-1: #e9dcf2;
+  --aurora-stop-2: #f0e4f7;
+  --aurora-stop-3: #e3d6ee;
+  --glass-tint: #d8c2e8;
+}
+
+body[data-theme="ocean-calm"] {
+  --accent: #4e8fb0;
+  --accent-dark: #386c87;
+  --accent-light: #dceef5;
+  --aurora-stop-1: #d7ecf2;
+  --aurora-stop-2: #dff2f6;
+  --aurora-stop-3: #cfe8ef;
+  --glass-tint: #b8dde8;
+}
+
+body[data-theme="golden-hour"] {
+  --accent: #c98a3a;
+  --accent-dark: #a16b28;
+  --accent-light: #f6e6cc;
+  --aurora-stop-1: #f7e3c4;
+  --aurora-stop-2: #fbead2;
+  --aurora-stop-3: #f5dcc0;
+  --glass-tint: #f0cf8a;
+}
+
+body[data-theme="twilight-aurora"] {
+  --accent: #5f6bb8;
+  --accent-dark: #474f91;
+  --accent-light: #e2e4f6;
+  --aurora-stop-1: #dde0f5;
+  --aurora-stop-2: #d9eef0;
+  --aurora-stop-3: #e2def2;
+  --glass-tint: #c3c8ed;
+}
+
+body[data-theme="starlit-midnight"] {
+  --accent: #5e6c8f;
+  --accent-dark: #475169;
+  --accent-light: #e1e4ec;
+  --aurora-stop-1: #d7dbe6;
+  --aurora-stop-2: #dde0ea;
+  --aurora-stop-3: #d2d6e2;
+  --glass-tint: #c7cce0;
+}
+
+body[data-theme="sunset-ember"] {
+  --accent: #c94f3a;
+  --accent-dark: #a63a28;
+  --accent-light: #f8ddd4;
+  --aurora-stop-1: #f9dcd2;
+  --aurora-stop-2: #f7cfe0;
+  --aurora-stop-3: #fbe0d0;
+  --glass-tint: #f0a888;
+}
+
+/* ---- Dark overrides ---- */
+
+:root[data-color-scheme="dark"] body[data-theme="morning-bloom"] {
+  --accent: #e3a3b8;
+  --accent-dark: #eec0d0;
+  --accent-light: #3a2730;
+  --aurora-stop-1: #2a1c22;
+  --aurora-stop-2: #331f27;
+  --aurora-stop-3: #241920;
+  --glass-tint: #e8a8bc;
+}
+
+:root[data-color-scheme="dark"] body[data-theme="meadow-fresh"] {
+  --accent: #7cc496;
+  --accent-dark: #a3deb8;
+  --accent-light: #1c3328;
+  --aurora-stop-1: #182420;
+  --aurora-stop-2: #1b2b23;
+  --aurora-stop-3: #152019;
+  --glass-tint: #8fd6a4;
+}
+
+:root[data-color-scheme="dark"] body[data-theme="lavender-dusk"] {
+  --accent: #c7a8e8;
+  --accent-dark: #ddc4f5;
+  --accent-light: #3a2e4a;
+  --aurora-stop-1: #241c2e;
+  --aurora-stop-2: #2a2035;
+  --aurora-stop-3: #1f1828;
+  --glass-tint: #c9a8e0;
+}
+
+:root[data-color-scheme="dark"] body[data-theme="ocean-calm"] {
+  --accent: #8fc2de;
+  --accent-dark: #b4dcef;
+  --accent-light: #223a46;
+  --aurora-stop-1: #15232c;
+  --aurora-stop-2: #182a33;
+  --aurora-stop-3: #121e26;
+  --glass-tint: #7fbdd8;
+}
+
+:root[data-color-scheme="dark"] body[data-theme="golden-hour"] {
+  --accent: #e0ac5f;
+  --accent-dark: #f0c889;
+  --accent-light: #4a381f;
+  --aurora-stop-1: #2c2015;
+  --aurora-stop-2: #332619;
+  --aurora-stop-3: #241c12;
+  --glass-tint: #e0b060;
+}
+
+:root[data-color-scheme="dark"] body[data-theme="twilight-aurora"] {
+  --accent: #9aa6e8;
+  --accent-dark: #c0c8f3;
+  --accent-light: #2a2d4a;
+  --aurora-stop-1: #1a1d33;
+  --aurora-stop-2: #16262c;
+  --aurora-stop-3: #201c30;
+  --glass-tint: #8f98e0;
+}
+
+:root[data-color-scheme="dark"] body[data-theme="starlit-midnight"] {
+  --accent: #c9d4ea;
+  --accent-dark: #e4eaf7;
+  --accent-light: #2a3042;
+  --aurora-stop-1: #0c0e16;
+  --aurora-stop-2: #0f1220;
+  --aurora-stop-3: #0a0b12;
+  --glass-tint: #aab4d2;
+}
+
+:root[data-color-scheme="dark"] body[data-theme="sunset-ember"] {
+  --accent: #e8805f;
+  --accent-dark: #f3a888;
+  --accent-light: #3f271c;
+  --aurora-stop-1: #2c1512;
+  --aurora-stop-2: #331a22;
+  --aurora-stop-3: #26130f;
+  --glass-tint: #e88a5e;
+}
+
+/* ---- Signature ambient animations (painted into .ambient-fx) ---- */
+
+body[data-theme="morning-bloom"] .ambient-fx {
+  background-image: radial-gradient(circle, #f3c3d4 0 7px, transparent 8px),
+    radial-gradient(circle, #eeaec4 0 5px, transparent 6px), radial-gradient(circle, #f6d2e0 0 6px, transparent 7px),
+    radial-gradient(circle, #f0b8c8 0 4px, transparent 5px);
+  background-position: 18% 25%, 68% 55%, 40% 75%, 85% 85%;
+  animation: petals-drift-morning-bloom 20s ease-in-out infinite alternate;
+}
+@keyframes petals-drift-morning-bloom {
+  from {
+    background-position: 18% 25%, 68% 55%, 40% 75%, 85% 85%;
+  }
+  to {
+    background-position: 24% 40%, 62% 66%, 46% 84%, 79% 92%;
+  }
+}
+
+body[data-theme="meadow-fresh"] .ambient-fx {
+  background-image: radial-gradient(circle, #bdeccb 0 4px, transparent 5px),
+    radial-gradient(circle, #a8e3bb 0 3px, transparent 4px), radial-gradient(circle, #cdf2d8 0 3px, transparent 4px),
+    radial-gradient(circle, #a8e3bb 0 4px, transparent 5px);
+  background-position: 22% 85%, 58% 70%, 75% 90%, 38% 60%;
+  animation: fireflies-rise-meadow-fresh 16s ease-in-out infinite alternate;
+}
+@keyframes fireflies-rise-meadow-fresh {
+  from {
+    background-position: 22% 85%, 58% 70%, 75% 90%, 38% 60%;
+    opacity: 0.6;
+  }
+  to {
+    background-position: 26% 35%, 54% 20%, 71% 40%, 42% 12%;
+    opacity: 1;
+  }
+}
+
+body[data-theme="lavender-dusk"] .ambient-fx {
+  background-image: linear-gradient(100deg, transparent 30%, rgba(199, 168, 232, 0.22) 50%, transparent 70%);
+  background-size: 200% 200%;
+  background-position: -20% 50%;
+  animation: mist-veil-lavender-dusk 22s ease-in-out infinite alternate;
+}
+@keyframes mist-veil-lavender-dusk {
+  from {
+    background-position: -20% 40%;
+  }
+  to {
+    background-position: 110% 60%;
+  }
+}
+
+body[data-theme="ocean-calm"] .ambient-fx {
+  background-image: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgba(143, 194, 222, 0.18) 48%,
+    rgba(143, 194, 222, 0.18) 52%,
+    transparent 100%
+  );
+  background-size: 100% 300%;
+  background-position: 0% 0%;
+  animation: wave-shimmer-ocean-calm 14s ease-in-out infinite alternate;
+}
+@keyframes wave-shimmer-ocean-calm {
+  from {
+    background-position: 0% -40%;
+  }
+  to {
+    background-position: 0% 40%;
+  }
+}
+
+body[data-theme="golden-hour"] .ambient-fx {
+  background-image: repeating-linear-gradient(
+    115deg,
+    transparent 0 12%,
+    rgba(240, 207, 138, 0.16) 12% 15%,
+    transparent 15% 27%
+  );
+  background-size: 180% 180%;
+  background-position: -40% -20%;
+  animation: light-rays-golden-hour 24s linear infinite;
+}
+@keyframes light-rays-golden-hour {
+  from {
+    background-position: -40% -20%;
+  }
+  to {
+    background-position: 20% 40%;
+  }
+}
+
+body[data-theme="twilight-aurora"] .ambient-fx {
+  background-image: linear-gradient(
+    10deg,
+    transparent 35%,
+    rgba(143, 152, 224, 0.28) 48%,
+    rgba(143, 152, 224, 0.28) 52%,
+    transparent 65%
+  );
+  background-size: 160% 160%;
+  background-position: 0% -30%;
+  animation: aurora-ribbon-twilight-aurora 18s ease-in-out infinite alternate;
+  filter: hue-rotate(0deg);
+}
+@keyframes aurora-ribbon-twilight-aurora {
+  from {
+    background-position: -10% -30%;
+    filter: hue-rotate(0deg);
+  }
+  to {
+    background-position: 10% 30%;
+    filter: hue-rotate(35deg);
+  }
+}
+
+body[data-theme="starlit-midnight"] .ambient-fx {
+  background-image: radial-gradient(circle, #e7ebf6 0 2px, transparent 3px),
+    radial-gradient(circle, #d4daea 0 1.5px, transparent 2.5px), radial-gradient(circle, #e7ebf6 0 1.5px, transparent 2.5px),
+    radial-gradient(circle, #d4daea 0 2px, transparent 3px), radial-gradient(circle, #e7ebf6 0 1.5px, transparent 2.5px);
+  background-position: 15% 20%, 35% 65%, 60% 15%, 80% 55%, 90% 80%;
+  animation: star-twinkle-starlit-midnight 6s ease-in-out infinite alternate;
+}
+@keyframes star-twinkle-starlit-midnight {
+  from {
+    opacity: 0.35;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+body[data-theme="sunset-ember"] .ambient-fx {
+  background-image: radial-gradient(circle, #f3a978 0 4px, transparent 5px),
+    radial-gradient(circle, #ef8f64 0 3px, transparent 4px),
+    repeating-linear-gradient(120deg, transparent 0 14%, rgba(243, 169, 120, 0.16) 14% 17%, transparent 17% 30%),
+    radial-gradient(circle, #f3a978 0 3px, transparent 4px);
+  background-position: 25% 90%, 55% 95%, -30% -20%, 75% 88%;
+  animation: embers-rise-sunset-ember 15s ease-in-out infinite alternate;
+}
+@keyframes embers-rise-sunset-ember {
+  from {
+    background-position: 25% 90%, 55% 95%, -30% -20%, 75% 88%;
+    opacity: 0.7;
+  }
+  to {
+    background-position: 29% 30%, 51% 35%, 10% 30%, 71% 32%;
+    opacity: 1;
   }
 }

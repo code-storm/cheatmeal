@@ -4,12 +4,15 @@ import { useQueryClient } from "@tanstack/react-query";
 import { ApiError } from "../api/client";
 import { profileApi } from "../api/profileApi";
 import { AUTH_ME_QUERY_KEY } from "../context/authQueryKey";
+import type { DietPreference } from "../types";
+import { DIET_PREFERENCE_META } from "../utils/taskType";
 
 interface FormState {
   age: string;
   prePregnancyWeightKg: string;
   heightCm: string;
   currentPregnancyWeek: string;
+  dietPreference: DietPreference | "";
 }
 
 const INITIAL_STATE: FormState = {
@@ -17,6 +20,7 @@ const INITIAL_STATE: FormState = {
   prePregnancyWeightKg: "",
   heightCm: "",
   currentPregnancyWeek: "",
+  dietPreference: "",
 };
 
 function validate(form: FormState): string | null {
@@ -38,6 +42,9 @@ function validate(form: FormState): string | null {
   }
   if (!form.currentPregnancyWeek || Number.isNaN(week) || week < 1 || week > 45) {
     return "Please enter a pregnancy week between 1 and 45.";
+  }
+  if (!form.dietPreference) {
+    return "Please select a dietary preference.";
   }
   return null;
 }
@@ -70,6 +77,7 @@ export default function OnboardingPage() {
         prePregnancyWeightKg: Number(form.prePregnancyWeightKg),
         heightCm: form.heightCm ? Number(form.heightCm) : undefined,
         currentPregnancyWeek: Number(form.currentPregnancyWeek),
+        dietPreference: form.dietPreference as DietPreference,
       });
 
       // The profile now exists — refresh auth so hasProfile flips to true
@@ -95,7 +103,7 @@ export default function OnboardingPage() {
 
   return (
     <div className="full-page-center">
-      <div className="onboarding-card">
+      <div className="onboarding-card glass-glow">
         <h1 className="onboarding-card__title">Let's set up your plan</h1>
         <p className="onboarding-card__subtitle">
           A few details so we can tailor your daily checklist to your stage of
@@ -156,6 +164,24 @@ export default function OnboardingPage() {
               If you're not sure, your doctor's estimate from your last checkup
               is fine.
             </span>
+          </label>
+
+          <label className="field">
+            <span className="field__label">Dietary preference</span>
+            <select
+              required
+              value={form.dietPreference}
+              onChange={(e) => updateField("dietPreference", e.target.value)}
+            >
+              <option value="" disabled>
+                Select one
+              </option>
+              {(Object.keys(DIET_PREFERENCE_META) as DietPreference[]).map((key) => (
+                <option key={key} value={key}>
+                  {DIET_PREFERENCE_META[key].label}
+                </option>
+              ))}
+            </select>
           </label>
 
           {errorMessage && (

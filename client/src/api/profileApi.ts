@@ -1,10 +1,10 @@
 import { apiRequest } from "./client";
-import type { OnboardingPayload, Profile, ProfileResponse } from "../types";
+import type { DietPreference, OnboardingPayload, Profile, ProfileResponse } from "../types";
 
 export const profileApi = {
   get: () => apiRequest<ProfileResponse>("/api/profile"),
 
-  update: (patch: { currentWeightKg?: number }) =>
+  update: (patch: { currentWeightKg?: number; dietPreference?: DietPreference }) =>
     apiRequest<{ profile: Profile }>("/api/profile", {
       method: "PATCH",
       body: patch,

@@ -1,6 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { planApi } from "../api/planApi";
-import type { DayPlan, Task, TaskStatus } from "../types";
+import { PROFILE_QUERY_KEY } from "./useProfile";
+import { BADGES_QUERY_KEY } from "./useBadges";
+import type { DayPlan, SwapTaskResponse, TaskStatus, TaskStatusUpdateResponse } from "../types";
 
 export const TODAY_PLAN_QUERY_KEY = ["plan", "today"] as const;
 
@@ -28,12 +30,7 @@ interface MutationContext {
 export function useUpdateTaskStatus() {
   const queryClient = useQueryClient();
 
-  return useMutation<
-    { task: Pick<Task, "id" | "status" | "completedAt"> },
-    Error,
-    UpdateTaskVars,
-    MutationContext
-  >({
+  return useMutation<TaskStatusUpdateResponse, Error, UpdateTaskVars, MutationContext>({
     mutationFn: ({ taskId, status }) => planApi.updateTaskStatus(taskId, status),
 
     onMutate: async ({ taskId, status }) => {
@@ -62,6 +59,34 @@ export function useUpdateTaskStatus() {
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: TODAY_PLAN_QUERY_KEY });
       queryClient.invalidateQueries({ queryKey: ["plan", "history"] });
+      queryClient.invalidateQueries({ queryKey: ["rewards"] });
+      queryClient.invalidateQueries({ queryKey: PROFILE_QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: BADGES_QUERY_KEY });
     },
+  });
+}
+
+export function useSwapTask() {
+  const queryClient = useQueryClient();
+
+  return useMutation<SwapTaskResponse, Error, { taskId: string; ignoreRecency?: boolean }>({
+    mutationFn: ({ taskId, ignoreRecency }) => planApi.swapTask(taskId, { ignoreRecency }),
+
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: TODAY_PLAN_QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: ["plan", "history"] });
+      queryClient.invalidateQueries({ queryKey: ["rewards"] });
+      queryClient.invalidateQueries({ queryKey: PROFILE_QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: BADGES_QUERY_KEY });
+    },
+  });
+}
+
+export function useTomorrowPreview(enabled: boolean) {
+  return useQuery({
+    queryKey: ["plan", "tomorrow-preview"],
+    queryFn: planApi.tomorrowPreview,
+    enabled,
+    retry: false,
   });
 }

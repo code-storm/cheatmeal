@@ -4,7 +4,9 @@ import { ErrorState } from "../components/ErrorState";
 import { LoadingState } from "../components/LoadingState";
 import { useLogout } from "../hooks/useAuthActions";
 import { useProfile, useUpdateProfile } from "../hooks/useProfile";
-import type { ProfileResponse, Trimester } from "../types";
+import { LevelProgress } from "../components/LevelProgress";
+import type { DietPreference, ProfileResponse, Trimester } from "../types";
+import { DIET_PREFERENCE_META } from "../utils/taskType";
 
 const TRIMESTER_LABEL: Record<Trimester, string> = {
   1: "First trimester",
@@ -55,12 +57,13 @@ export default function ProfilePage() {
 // Mounted only once `data` has loaded, so local state can initialize
 // directly from the fetched profile without an effect-based sync.
 function ProfileSummary({ data }: { data: ProfileResponse }) {
-  const { profile, currentPregnancyWeek, trimester } = data;
+  const { profile, currentPregnancyWeek, trimester, level } = data;
   const updateProfile = useUpdateProfile();
 
   const [currentWeight, setCurrentWeight] = useState(
     profile.currentWeightKg != null ? String(profile.currentWeightKg) : "",
   );
+  const [dietPreference, setDietPreference] = useState<DietPreference>(profile.dietPreference);
   const [savedMessage, setSavedMessage] = useState<string | null>(null);
 
   function handleSaveWeight() {
@@ -76,6 +79,14 @@ function ProfileSummary({ data }: { data: ProfileResponse }) {
     );
   }
 
+  function handleSaveDietPreference() {
+    setSavedMessage(null);
+    updateProfile.mutate(
+      { dietPreference },
+      { onSuccess: () => setSavedMessage("Saved!") },
+    );
+  }
+
   return (
     <>
       <header className="page-header">
@@ -85,8 +96,24 @@ function ProfileSummary({ data }: { data: ProfileResponse }) {
         </p>
       </header>
 
-      <div className="profile-card">
+      <div className="profile-card glass-glow">
+        <LevelProgress level={level} />
+
         <dl className="profile-details">
+          <div className="profile-details__row">
+            <dt>Current streak</dt>
+            <dd>{profile.currentStreak} day{profile.currentStreak === 1 ? "" : "s"} 🔥</dd>
+          </div>
+          <div className="profile-details__row">
+            <dt>Longest streak</dt>
+            <dd>{profile.longestStreak} day{profile.longestStreak === 1 ? "" : "s"}</dd>
+          </div>
+          <div className="profile-details__row">
+            <dt>Grace tokens available</dt>
+            <dd>
+              {profile.streakGraceTokens} 🛡️
+            </dd>
+          </div>
           <div className="profile-details__row">
             <dt>Age</dt>
             <dd>{profile.age}</dd>
@@ -108,6 +135,10 @@ function ProfileSummary({ data }: { data: ProfileResponse }) {
           <div className="profile-details__row">
             <dt>Trimester</dt>
             <dd>{TRIMESTER_LABEL[trimester]}</dd>
+          </div>
+          <div className="profile-details__row">
+            <dt>Dietary preference</dt>
+            <dd>{DIET_PREFERENCE_META[profile.dietPreference].label}</dd>
           </div>
         </dl>
 
@@ -131,6 +162,29 @@ function ProfileSummary({ data }: { data: ProfileResponse }) {
           >
             {updateProfile.isPending ? "Saving..." : "Save"}
           </button>
+
+          <label className="field">
+            <span className="field__label">Dietary preference</span>
+            <select
+              value={dietPreference}
+              onChange={(e) => setDietPreference(e.target.value as DietPreference)}
+            >
+              {(Object.keys(DIET_PREFERENCE_META) as DietPreference[]).map((key) => (
+                <option key={key} value={key}>
+                  {DIET_PREFERENCE_META[key].label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <button
+            type="button"
+            className="btn btn--primary"
+            onClick={handleSaveDietPreference}
+            disabled={updateProfile.isPending}
+          >
+            {updateProfile.isPending ? "Saving..." : "Save"}
+          </button>
+
           {savedMessage && <p className="profile-edit__message">{savedMessage}</p>}
         </div>
       </div>

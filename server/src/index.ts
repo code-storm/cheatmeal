@@ -8,6 +8,11 @@ import authRoutes from "./routes/auth.routes";
 import onboardingRoutes from "./routes/onboarding.routes";
 import profileRoutes from "./routes/profile.routes";
 import planRoutes from "./routes/plan.routes";
+import customTasksRoutes from "./routes/customTasks.routes";
+import rewardsRoutes from "./routes/rewards.routes";
+import challengesRoutes from "./routes/challenges.routes";
+import badgesRoutes from "./routes/badges.routes";
+import tipsRoutes from "./routes/tips.routes";
 
 const app = express();
 
@@ -25,6 +30,11 @@ app.use("/api", authRoutes);
 app.use("/api", onboardingRoutes);
 app.use("/api", profileRoutes);
 app.use("/api", planRoutes);
+app.use("/api", customTasksRoutes);
+app.use("/api", rewardsRoutes);
+app.use("/api", challengesRoutes);
+app.use("/api", badgesRoutes);
+app.use("/api", tipsRoutes);
 
 // Catch-all 404 for unmatched /api routes.
 app.use("/api", (_req: Request, res: Response) => {

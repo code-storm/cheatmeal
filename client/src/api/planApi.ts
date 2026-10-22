@@ -1,5 +1,11 @@
 import { apiRequest } from "./client";
-import type { DayPlan, HistoryResponse, Task, TaskStatus } from "../types";
+import type {
+  DayPlan,
+  HistoryResponse,
+  SwapTaskResponse,
+  TaskStatus,
+  TaskStatusUpdateResponse,
+} from "../types";
 
 export const planApi = {
   today: () => apiRequest<DayPlan>("/api/plan/today"),
@@ -15,8 +21,16 @@ export const planApi = {
   },
 
   updateTaskStatus: (taskId: string, status: TaskStatus) =>
-    apiRequest<{ task: Pick<Task, "id" | "status" | "completedAt"> }>(
-      `/api/plan/task/${taskId}`,
-      { method: "PATCH", body: { status } },
-    ),
+    apiRequest<TaskStatusUpdateResponse>(`/api/plan/task/${taskId}`, {
+      method: "PATCH",
+      body: { status },
+    }),
+
+  swapTask: (taskId: string, options?: { ignoreRecency?: boolean }) =>
+    apiRequest<SwapTaskResponse>(`/api/plan/task/${taskId}/swap`, {
+      method: "POST",
+      body: options?.ignoreRecency ? { ignoreRecency: true } : undefined,
+    }),
+
+  tomorrowPreview: () => apiRequest<DayPlan & { preview: true }>("/api/plan/tomorrow-preview"),
 };

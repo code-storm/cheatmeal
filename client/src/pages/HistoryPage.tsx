@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { ApiError } from "../api/client";
 import { ErrorState } from "../components/ErrorState";
 import { LoadingState } from "../components/LoadingState";
@@ -94,27 +95,36 @@ function HistoryDayRow({
         <ProgressRing completed={day.completedCount} total={day.totalCount} size={40} />
       </button>
 
-      {isExpanded && (
-        <div className="history-day__detail">
-          {dayPlanQuery.isLoading && <LoadingState label="Loading that day..." />}
+      <AnimatePresence initial={false}>
+        {isExpanded && (
+          <motion.div
+            className="history-day__detail"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
+            style={{ overflow: "hidden" }}
+          >
+            {dayPlanQuery.isLoading && <LoadingState label="Loading that day..." />}
 
-          {dayPlanQuery.isError &&
-            (dayPlanQuery.error instanceof ApiError && dayPlanQuery.error.status === 404 ? (
-              <p className="history-day__empty">No plan recorded for this day.</p>
-            ) : (
-              <ErrorState
-                message={
-                  dayPlanQuery.error instanceof Error
-                    ? dayPlanQuery.error.message
-                    : undefined
-                }
-                onRetry={() => dayPlanQuery.refetch()}
-              />
-            ))}
+            {dayPlanQuery.isError &&
+              (dayPlanQuery.error instanceof ApiError && dayPlanQuery.error.status === 404 ? (
+                <p className="history-day__empty">No plan recorded for this day.</p>
+              ) : (
+                <ErrorState
+                  message={
+                    dayPlanQuery.error instanceof Error
+                      ? dayPlanQuery.error.message
+                      : undefined
+                  }
+                  onRetry={() => dayPlanQuery.refetch()}
+                />
+              ))}
 
-          {dayPlanQuery.data && <TaskList tasks={dayPlanQuery.data.tasks} />}
-        </div>
-      )}
+            {dayPlanQuery.data && <TaskList tasks={dayPlanQuery.data.tasks} />}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </li>
   );
 }
