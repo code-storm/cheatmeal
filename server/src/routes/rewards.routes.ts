@@ -4,6 +4,7 @@ import { requireAuth, type AuthedRequest } from "../middleware/requireAuth";
 import { checkAndAwardBadges } from "../services/badges.service";
 import { effectiveCostFor, getFeaturedSkinSlug } from "../services/featuredSkin.service";
 import { computeCurrentWeek } from "../services/pregnancyWeek.service";
+import { getActiveRewardItems } from "../lib/staticContentCache";
 
 const router = Router();
 
@@ -28,7 +29,7 @@ router.get("/rewards", requireAuth, async (req: AuthedRequest, res, next) => {
 
     const [profile, items, userRewards, featuredSlug] = await Promise.all([
       prisma.pregnancyProfile.findUnique({ where: { userId } }),
-      prisma.rewardItem.findMany({ where: { isActive: true } }),
+      getActiveRewardItems(),
       prisma.userReward.findMany({ where: { userId }, select: { rewardItemId: true } }),
       getFeaturedSkinSlug(),
     ]);
@@ -76,23 +77,31 @@ router.post("/rewards/:slug/unlock", requireAuth, async (req: AuthedRequest, res
     const userId = req.userId as string;
     const { slug } = req.params;
 
-    const item = await prisma.rewardItem.findUnique({ where: { slug } });
-    if (!item || !item.isActive) {
+    // profile has no data dependency on the item lookup - fetched together
+    // instead of sequentially.
+    const [activeItems, profile] = await Promise.all([
+      getActiveRewardItems(),
+      prisma.pregnancyProfile.findUnique({ where: { userId } }),
+    ]);
+
+    const item = activeItems.find((i) => i.slug === slug);
+    if (!item) {
       res.status(404).json({ error: "Reward not found." });
       return;
     }
-
-    const existing = await prisma.userReward.findUnique({
-      where: { userId_rewardItemId: { userId, rewardItemId: item.id } },
-    });
-    if (existing) {
-      res.status(409).json({ error: "Already unlocked." });
+    if (!profile) {
+      res.status(400).json({ error: "Profile required" });
       return;
     }
 
-    const profile = await prisma.pregnancyProfile.findUnique({ where: { userId } });
-    if (!profile) {
-      res.status(400).json({ error: "Profile required" });
+    const [existing, featuredSlug] = await Promise.all([
+      prisma.userReward.findUnique({
+        where: { userId_rewardItemId: { userId, rewardItemId: item.id } },
+      }),
+      getFeaturedSkinSlug(),
+    ]);
+    if (existing) {
+      res.status(409).json({ error: "Already unlocked." });
       return;
     }
 
@@ -102,7 +111,6 @@ router.post("/rewards/:slug/unlock", requireAuth, async (req: AuthedRequest, res
       return;
     }
 
-    const featuredSlug = await getFeaturedSkinSlug();
     const isFeatured = item.category === "SKIN" && item.slug === featuredSlug;
     const effectiveCost = effectiveCostFor(item.costPoints, isFeatured);
 

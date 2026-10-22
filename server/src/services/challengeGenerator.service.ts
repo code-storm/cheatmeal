@@ -1,6 +1,7 @@
 import { prisma } from "../lib/prisma";
 import type { ChallengeDifficulty } from "../lib/enums";
 import { CHALLENGE_DIFFICULTIES } from "../lib/enums";
+import { getActiveChallengeTemplates } from "../lib/staticContentCache";
 
 export interface ChallengeInstanceDTO {
   id: string;
@@ -33,9 +34,9 @@ export async function getOrCreateDailyChallenges(userId: string, dateStr: string
   const missingDifficulties = CHALLENGE_DIFFICULTIES.filter((d) => !existingByDifficulty.has(d));
 
   if (missingDifficulties.length > 0) {
-    const templatesByDifficulty = await prisma.dailyChallengeTemplate.findMany({
-      where: { isActive: true, difficulty: { in: missingDifficulties } },
-    });
+    const missingSet = new Set<string>(missingDifficulties);
+    const allTemplates = await getActiveChallengeTemplates();
+    const templatesByDifficulty = allTemplates.filter((t) => missingSet.has(t.difficulty));
 
     for (const difficulty of missingDifficulties) {
       const pool = templatesByDifficulty.filter((t) => t.difficulty === difficulty);

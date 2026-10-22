@@ -5,6 +5,7 @@ import type { ItemType, MealSlot, TaskStatus } from "../lib/enums";
 import { allowedDietTypesFor, type DietType, type DietPreference } from "../lib/enums";
 import { DAILY_MACRO_TARGETS, type MacroTarget } from "../content/macroTargets";
 import { POINTS_BY_TASK_TYPE, CUSTOM_TASK_POINTS } from "../content/points";
+import { getActiveTaskTemplates, getFoodAvoidRules, getActivityAvoidRules } from "../lib/staticContentCache";
 
 // ---------------------------------------------------------------------------
 // Public DTO shapes
@@ -111,13 +112,16 @@ function isAllowedByDiet(dietType: string, allowed: DietType[]): boolean {
   return (allowed as readonly string[]).includes(dietType);
 }
 
-async function pickMealForPool(
-  userId: string,
-  rotationPoolKey: string,
-  dateStr: string,
+// Pure, synchronous selection - no IO. Shared by pickMealForPool (which
+// fetches its own single-pool data, for the one-off swap flow) and
+// getOrCreateDailyPlan's batched multi-slot path, which fetches this same
+// shape of data once across every slot/pool instead of once per pool.
+function selectMealFromPool(
   candidates: MealCandidate[],
-  ignoreRecency = false
-): Promise<MealCandidate> {
+  recentlyServedIds: Set<string>,
+  lastServedByCandidate: Map<string, string>,
+  ignoreRecency: boolean
+): MealCandidate {
   if (candidates.length === 1) {
     return candidates[0];
   }
@@ -131,17 +135,6 @@ async function pickMealForPool(
     return candidates[Math.floor(Math.random() * candidates.length)];
   }
 
-  const sevenDaysAgo = dateNDaysBefore(dateStr, 7);
-  const recentLogs = await prisma.mealServingLog.findMany({
-    where: {
-      userId,
-      rotationPoolKey,
-      servedDate: { gte: sevenDaysAgo, lt: dateStr },
-    },
-    select: { taskTemplateId: true },
-  });
-  const recentlyServedIds = new Set(recentLogs.map((l) => l.taskTemplateId));
-
   const remaining = candidates.filter((c) => !recentlyServedIds.has(c.id));
   if (remaining.length > 0) {
     return remaining[Math.floor(Math.random() * remaining.length)];
@@ -149,16 +142,6 @@ async function pickMealForPool(
 
   // Fallback: pick the least-recently-served candidate(s) in the full pool,
   // breaking ties randomly. "Never served" sorts before any served date.
-  const lastServedByCandidate = new Map<string, string>(); // '' sentinel = never served
-  for (const candidate of candidates) {
-    const lastLog = await prisma.mealServingLog.findFirst({
-      where: { userId, rotationPoolKey, taskTemplateId: candidate.id },
-      orderBy: { servedDate: "desc" },
-      select: { servedDate: true },
-    });
-    lastServedByCandidate.set(candidate.id, lastLog?.servedDate ?? "");
-  }
-
   let oldestKey = lastServedByCandidate.get(candidates[0].id) ?? "";
   for (const candidate of candidates) {
     const key = lastServedByCandidate.get(candidate.id) ?? "";
@@ -167,6 +150,55 @@ async function pickMealForPool(
 
   const tied = candidates.filter((c) => (lastServedByCandidate.get(c.id) ?? "") === oldestKey);
   return tied[Math.floor(Math.random() * tied.length)];
+}
+
+async function pickMealForPool(
+  userId: string,
+  rotationPoolKey: string,
+  dateStr: string,
+  candidates: MealCandidate[],
+  ignoreRecency = false
+): Promise<MealCandidate> {
+  if (candidates.length === 1) {
+    return candidates[0];
+  }
+  if (ignoreRecency) {
+    return selectMealFromPool(candidates, new Set(), new Map(), true);
+  }
+
+  // Only used by the single-pool swap flow (pickAlternativeForSlot), not
+  // the main multi-slot generation path below - which batches this same
+  // data once across every slot instead of calling this function at all.
+  // Kept lazy (only fetches the fallback data when actually needed) since
+  // this is a one-pool-at-a-time call site, not a loop.
+  const sevenDaysAgo = dateNDaysBefore(dateStr, 7);
+  const recentLogs = await prisma.mealServingLog.findMany({
+    where: { userId, rotationPoolKey, servedDate: { gte: sevenDaysAgo, lt: dateStr } },
+    select: { taskTemplateId: true },
+  });
+  const recentlyServedIds = new Set(recentLogs.map((l) => l.taskTemplateId));
+
+  const remaining = candidates.filter((c) => !recentlyServedIds.has(c.id));
+  if (remaining.length > 0) {
+    return selectMealFromPool(candidates, recentlyServedIds, new Map(), false);
+  }
+
+  const allPoolLogs = await prisma.mealServingLog.findMany({
+    where: { userId, rotationPoolKey, taskTemplateId: { in: candidates.map((c) => c.id) } },
+    select: { taskTemplateId: true, servedDate: true },
+  });
+  const lastServedByCandidate = new Map<string, string>();
+  for (const candidate of candidates) {
+    lastServedByCandidate.set(candidate.id, "");
+  }
+  for (const log of allPoolLogs) {
+    const current = lastServedByCandidate.get(log.taskTemplateId) ?? "";
+    if (log.servedDate > current) {
+      lastServedByCandidate.set(log.taskTemplateId, log.servedDate);
+    }
+  }
+
+  return selectMealFromPool(candidates, recentlyServedIds, lastServedByCandidate, false);
 }
 
 export async function pickAlternativeForSlot(
@@ -179,21 +211,20 @@ export async function pickAlternativeForSlot(
   allowedDietTypes: DietType[],
   ignoreRecency = false
 ): Promise<MealCandidate | null> {
-  const foodAvoidRules = await prisma.foodAvoidRule.findMany({
-    where: { severity: "avoid", minWeek: { lte: currentWeek }, maxWeek: { gte: currentWeek } },
-  });
+  const [foodAvoidRules, activeTaskTemplates] = await Promise.all([
+    getFoodAvoidRules(),
+    getActiveTaskTemplates(),
+  ]);
 
-  const slotTemplates = await prisma.taskTemplate.findMany({
-    where: {
-      isActive: true,
-      type: "MEAL",
-      mealSlot,
-      rotationPoolKey,
-      minWeek: { lte: currentWeek },
-      maxWeek: { gte: currentWeek },
-      id: { not: excludeTemplateId },
-    },
-  });
+  const slotTemplates = activeTaskTemplates.filter(
+    (t) =>
+      t.type === "MEAL" &&
+      t.mealSlot === mealSlot &&
+      t.rotationPoolKey === rotationPoolKey &&
+      t.minWeek <= currentWeek &&
+      t.maxWeek >= currentWeek &&
+      t.id !== excludeTemplateId
+  );
 
   const candidates: MealCandidate[] = slotTemplates
     .filter((t) => isAllowedByDiet(t.dietType, allowedDietTypes))
@@ -316,19 +347,31 @@ async function syncCustomTaskInstances(userId: string, dateStr: string, dailyPla
     },
   });
 
-  for (const customTask of customTasks) {
-    await prisma.customTaskInstance.upsert({
-      where: { customTaskId_dailyPlanId: { customTaskId: customTask.id, dailyPlanId } },
-      update: {},
-      create: {
-        customTaskId: customTask.id,
-        dailyPlanId,
-        scheduledTime: customTask.scheduledTime,
-        status: "PENDING",
-        pointsAwarded: CUSTOM_TASK_POINTS,
-      },
-    });
-  }
+  if (customTasks.length === 0) return;
+
+  // Two batched queries instead of one upsert per custom task. Prisma's
+  // `skipDuplicates` isn't supported on SQLite (so it can't replace the
+  // upsert directly) - instead, find which of these custom tasks already
+  // have an instance for this plan, then createMany only the ones that
+  // don't. Exactly equivalent to the old upsert loop, since its
+  // `update: {}` branch was already a no-op for any instance that existed.
+  const existingInstances = await prisma.customTaskInstance.findMany({
+    where: { dailyPlanId, customTaskId: { in: customTasks.map((t) => t.id) } },
+    select: { customTaskId: true },
+  });
+  const existingIds = new Set(existingInstances.map((i) => i.customTaskId));
+  const missing = customTasks.filter((t) => !existingIds.has(t.id));
+  if (missing.length === 0) return;
+
+  await prisma.customTaskInstance.createMany({
+    data: missing.map((customTask) => ({
+      customTaskId: customTask.id,
+      dailyPlanId,
+      scheduledTime: customTask.scheduledTime,
+      status: "PENDING",
+      pointsAwarded: CUSTOM_TASK_POINTS,
+    })),
+  });
 }
 
 const ALL_MEAL_SLOTS: MealSlot[] = [
@@ -379,19 +422,18 @@ export async function getOrCreateDailyPlan(userId: string, dateStr: string): Pro
   const onDate = parseDateOnlyUTC(dateStr);
   const currentWeek = computeCurrentWeek(profile.lmpDate, onDate);
 
-  // --- Non-meal tasks (EXERCISE / HABIT / GROOMING) -----------------------
-  const nonMealTemplates = await prisma.taskTemplate.findMany({
-    where: {
-      isActive: true,
-      type: { not: "MEAL" },
-      minWeek: { lte: currentWeek },
-      maxWeek: { gte: currentWeek },
-    },
-  });
+  // Independent of each other (same cached content tables, no data
+  // dependency) - fetched together instead of sequentially.
+  const [activeTaskTemplates, activityAvoidRules, foodAvoidRules] = await Promise.all([
+    getActiveTaskTemplates(),
+    getActivityAvoidRules(),
+    getFoodAvoidRules(),
+  ]);
 
-  const activityAvoidRules = await prisma.activityAvoidRule.findMany({
-    where: { severity: "avoid", minWeek: { lte: currentWeek }, maxWeek: { gte: currentWeek } },
-  });
+  // --- Non-meal tasks (EXERCISE / HABIT / GROOMING) -----------------------
+  const nonMealTemplates = activeTaskTemplates.filter(
+    (t) => t.type !== "MEAL" && t.minWeek <= currentWeek && t.maxWeek >= currentWeek
+  );
 
   const includedNonMealTemplates = nonMealTemplates.filter((template) => {
     const result = isExcludedByAvoidRules(template.name, template.description, activityAvoidRules, currentWeek);
@@ -405,33 +447,16 @@ export async function getOrCreateDailyPlan(userId: string, dateStr: string): Pro
   });
 
   // --- Meal tasks (rotation pools per slot) -------------------------------
-  const foodAvoidRules = await prisma.foodAvoidRule.findMany({
-    where: { severity: "avoid", minWeek: { lte: currentWeek }, maxWeek: { gte: currentWeek } },
-  });
-
-  const mealPicksForTasks: {
-    templateId: string;
-    name: string;
-    description: string;
-    defaultTime: string;
-    rotationPoolKey: string;
-    mealSlot: MealSlot;
-    calories: number;
-    proteinG: number;
-    carbsG: number;
-    fatG: number;
-  }[] = [];
-
+  // Build every slot's candidate pools first (pure, in-memory, no IO),
+  // then fetch EVERY pool's rotation history in two batched queries total
+  // (instead of two queries PER pool) before picking synchronously -
+  // collapses what used to be up to 14 sequential round trips (7 slots x
+  // up to 2 queries each) into 2.
+  const poolsBySlot = new Map<MealSlot, Map<string, MealCandidate[]>>();
   for (const slot of ALL_MEAL_SLOTS) {
-    const slotTemplates = await prisma.taskTemplate.findMany({
-      where: {
-        isActive: true,
-        type: "MEAL",
-        mealSlot: slot,
-        minWeek: { lte: currentWeek },
-        maxWeek: { gte: currentWeek },
-      },
-    });
+    const slotTemplates = activeTaskTemplates.filter(
+      (t) => t.type === "MEAL" && t.mealSlot === slot && t.minWeek <= currentWeek && t.maxWeek >= currentWeek
+    );
 
     const dietFilteredTemplates = slotTemplates.filter((t) => isAllowedByDiet(t.dietType, allowedDietTypes));
 
@@ -465,10 +490,66 @@ export async function getOrCreateDailyPlan(userId: string, dateStr: string): Pro
       });
       pools.set(template.rotationPoolKey, list);
     }
+    poolsBySlot.set(slot, pools);
+  }
 
+  const allPoolKeys = new Set<string>();
+  const allCandidateIds = new Set<string>();
+  for (const pools of poolsBySlot.values()) {
+    for (const [poolKey, candidates] of pools) {
+      allPoolKeys.add(poolKey);
+      for (const c of candidates) allCandidateIds.add(c.id);
+    }
+  }
+
+  const sevenDaysAgo = dateNDaysBefore(dateStr, 7);
+  const [recentLogsAcrossPools, allLogsAcrossPools] = await Promise.all([
+    prisma.mealServingLog.findMany({
+      where: { userId, rotationPoolKey: { in: [...allPoolKeys] }, servedDate: { gte: sevenDaysAgo, lt: dateStr } },
+      select: { rotationPoolKey: true, taskTemplateId: true },
+    }),
+    prisma.mealServingLog.findMany({
+      where: { userId, taskTemplateId: { in: [...allCandidateIds] } },
+      select: { rotationPoolKey: true, taskTemplateId: true, servedDate: true },
+    }),
+  ]);
+
+  const recentlyServedIdsByPool = new Map<string, Set<string>>();
+  for (const log of recentLogsAcrossPools) {
+    const set = recentlyServedIdsByPool.get(log.rotationPoolKey) ?? new Set<string>();
+    set.add(log.taskTemplateId);
+    recentlyServedIdsByPool.set(log.rotationPoolKey, set);
+  }
+  const lastServedByPoolAndCandidate = new Map<string, Map<string, string>>();
+  for (const log of allLogsAcrossPools) {
+    const byCandidate = lastServedByPoolAndCandidate.get(log.rotationPoolKey) ?? new Map<string, string>();
+    const current = byCandidate.get(log.taskTemplateId) ?? "";
+    if (log.servedDate > current) byCandidate.set(log.taskTemplateId, log.servedDate);
+    lastServedByPoolAndCandidate.set(log.rotationPoolKey, byCandidate);
+  }
+
+  const mealPicksForTasks: {
+    templateId: string;
+    name: string;
+    description: string;
+    defaultTime: string;
+    rotationPoolKey: string;
+    mealSlot: MealSlot;
+    calories: number;
+    proteinG: number;
+    carbsG: number;
+    fatG: number;
+  }[] = [];
+
+  for (const [slot, pools] of poolsBySlot) {
     for (const [rotationPoolKey, candidates] of pools) {
       if (candidates.length === 0) continue;
-      const picked = await pickMealForPool(userId, rotationPoolKey, dateStr, candidates);
+      const picked = selectMealFromPool(
+        candidates,
+        recentlyServedIdsByPool.get(rotationPoolKey) ?? new Set(),
+        lastServedByPoolAndCandidate.get(rotationPoolKey) ?? new Map(),
+        false
+      );
       mealPicksForTasks.push({
         templateId: picked.id,
         name: picked.name,
@@ -546,7 +627,7 @@ export async function getOrCreateDailyPlan(userId: string, dateStr: string): Pro
       }
 
       return plan;
-    });
+    }, { timeout: 15000 });
   } catch (err) {
     // A concurrent request may have created the plan first; the
     // @@unique([userId, date]) constraint raises Prisma error P2002.

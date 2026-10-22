@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { prisma } from "../lib/prisma";
 import { requireAuth, type AuthedRequest } from "../middleware/requireAuth";
+import { getActiveBadges } from "../lib/staticContentCache";
 
 const router = Router();
 
@@ -9,7 +10,7 @@ router.get("/badges", requireAuth, async (req: AuthedRequest, res, next) => {
     const userId = req.userId as string;
 
     const [items, userBadges] = await Promise.all([
-      prisma.badge.findMany({ where: { isActive: true } }),
+      getActiveBadges(),
       prisma.userBadge.findMany({ where: { userId } }),
     ]);
 

@@ -1,5 +1,6 @@
 import type { Prisma, PregnancyProfile } from "@prisma/client";
 import { computeCurrentWeek } from "./pregnancyWeek.service";
+import { getActiveBadges } from "../lib/staticContentCache";
 
 type TxClient = Prisma.TransactionClient;
 
@@ -10,58 +11,97 @@ export interface UnlockedBadgeDTO {
   icon: string;
 }
 
-// `profile` is fetched once by the caller (checkAndAwardBadges) rather than
-// per-branch here - each extra findUnique inside this function used to be
-// its own network round-trip to the database, and against a networked
-// Turso database (not a local SQLite file) that added up across the up to
-// 13 badges checked per call, enough to blow the transaction's timeout.
-async function isCriteriaMet(
+// Each criteria key's shared data is fetched at most once per
+// checkAndAwardBadges call, in parallel with every other key the
+// *remaining candidate* badges actually need - not once per candidate
+// badge in a sequential loop (what made this function's round-trip count
+// scale with how many of the ~13 badges were still unearned), and not
+// unconditionally for keys no remaining candidate needs (most users will
+// have already permanently unlocked badges like FIRST_TASK/CUSTOM_CREATOR
+// early on, so re-running their queries - PERFECT_DAY's in particular,
+// a full history scan - on every later completion would be wasteful).
+const PROFILE_DEPENDENT_KEYS = new Set([
+  "STREAK_7",
+  "STREAK_30",
+  "CENTURION",
+  "TRIMESTER_2_REACHED",
+  "WEEK_20_HALFWAY",
+  "TRIMESTER_3_REACHED",
+  "FULL_TERM_REACHED",
+]);
+
+interface CriteriaContext {
+  profile?: PregnancyProfile | null;
+  completedTaskOrInstanceCount?: number;
+  hasPerfectDay?: boolean;
+  completedChallengeCount?: number;
+  userRewardCount?: number;
+  customTaskCount?: number;
+}
+
+async function computeCriteriaContext(
   tx: TxClient,
   userId: string,
-  criteriaKey: string,
-  profile: PregnancyProfile | null
-): Promise<boolean> {
+  candidateCriteriaKeys: Set<string>
+): Promise<CriteriaContext> {
+  const needs = (...keys: string[]) => keys.some((k) => candidateCriteriaKeys.has(k));
+
+  const [profile, taskCounts, plans, completedChallengeCount, userRewardCount, customTaskCount] = await Promise.all([
+    needs(...PROFILE_DEPENDENT_KEYS) ? tx.pregnancyProfile.findUnique({ where: { userId } }) : undefined,
+    needs("FIRST_TASK")
+      ? Promise.all([
+          tx.dailyTask.count({ where: { dailyPlan: { userId }, status: "COMPLETED" } }),
+          tx.customTaskInstance.count({ where: { dailyPlan: { userId }, status: "COMPLETED" } }),
+        ])
+      : undefined,
+    needs("PERFECT_DAY")
+      ? tx.dailyPlan.findMany({
+          where: { userId },
+          include: {
+            tasks: { select: { status: true } },
+            customTaskInstances: { select: { status: true } },
+          },
+        })
+      : undefined,
+    needs("CHALLENGE_ROOKIE", "CHALLENGE_CHAMPION")
+      ? tx.dailyChallengeInstance.count({ where: { userId, status: "COMPLETED" } })
+      : undefined,
+    needs("FIRST_REWARD_UNLOCK") ? tx.userReward.count({ where: { userId } }) : undefined,
+    needs("CUSTOM_CREATOR") ? tx.customTask.count({ where: { userId } }) : undefined,
+  ]);
+
+  return {
+    profile,
+    completedTaskOrInstanceCount: taskCounts ? taskCounts[0] + taskCounts[1] : undefined,
+    hasPerfectDay: plans?.some((plan) => {
+      const all = [...plan.tasks, ...plan.customTaskInstances];
+      return all.length > 0 && all.every((t) => t.status === "COMPLETED");
+    }),
+    completedChallengeCount,
+    userRewardCount,
+    customTaskCount,
+  };
+}
+
+function isCriteriaMet(criteriaKey: string, ctx: CriteriaContext): boolean {
+  const { profile } = ctx;
   switch (criteriaKey) {
-    case "FIRST_TASK": {
-      const [taskCount, instanceCount] = await Promise.all([
-        tx.dailyTask.count({ where: { dailyPlan: { userId }, status: "COMPLETED" } }),
-        tx.customTaskInstance.count({ where: { dailyPlan: { userId }, status: "COMPLETED" } }),
-      ]);
-      return taskCount + instanceCount >= 1;
-    }
-    case "PERFECT_DAY": {
-      const plans = await tx.dailyPlan.findMany({
-        where: { userId },
-        include: {
-          tasks: { select: { status: true } },
-          customTaskInstances: { select: { status: true } },
-        },
-      });
-      return plans.some((plan) => {
-        const all = [...plan.tasks, ...plan.customTaskInstances];
-        return all.length > 0 && all.every((t) => t.status === "COMPLETED");
-      });
-    }
+    case "FIRST_TASK":
+      return (ctx.completedTaskOrInstanceCount ?? 0) >= 1;
+    case "PERFECT_DAY":
+      return ctx.hasPerfectDay ?? false;
     case "STREAK_7":
       return (profile?.longestStreak ?? 0) >= 7;
     case "STREAK_30":
       return (profile?.longestStreak ?? 0) >= 30;
-    case "CHALLENGE_ROOKIE": {
-      const count = await tx.dailyChallengeInstance.count({ where: { userId, status: "COMPLETED" } });
-      return count >= 1;
-    }
-    case "CHALLENGE_CHAMPION": {
-      const count = await tx.dailyChallengeInstance.count({ where: { userId, status: "COMPLETED" } });
-      return count >= 25;
-    }
-    case "FIRST_REWARD_UNLOCK": {
-      const count = await tx.userReward.count({ where: { userId } });
-      return count >= 1;
-    }
-    case "CUSTOM_CREATOR": {
-      const count = await tx.customTask.count({ where: { userId } });
-      return count >= 1;
-    }
+    case "CHALLENGE_ROOKIE":
+      return (ctx.completedChallengeCount ?? 0) >= 1;
+    case "CHALLENGE_CHAMPION":
+      return (ctx.completedChallengeCount ?? 0) >= 25;
+    case "FIRST_REWARD_UNLOCK":
+      return (ctx.userRewardCount ?? 0) >= 1;
+    case "CUSTOM_CREATOR":
+      return (ctx.customTaskCount ?? 0) >= 1;
     case "CENTURION":
       return (profile?.totalPointsEarned ?? 0) >= 100;
     // Journey milestones: time-based (tied to the real pregnancy calendar),
@@ -90,20 +130,21 @@ async function isCriteriaMet(
  * on THIS call, so callers can surface a toast without re-fetching.
  */
 export async function checkAndAwardBadges(tx: TxClient, userId: string): Promise<UnlockedBadgeDTO[]> {
-  const [allBadges, userBadges, profile] = await Promise.all([
-    tx.badge.findMany({ where: { isActive: true } }),
+  const [allBadges, userBadges] = await Promise.all([
+    getActiveBadges(),
     tx.userBadge.findMany({ where: { userId }, select: { badgeId: true } }),
-    tx.pregnancyProfile.findUnique({ where: { userId } }),
   ]);
 
   const unlockedIds = new Set(userBadges.map((ub) => ub.badgeId));
   const candidates = allBadges.filter((b) => !unlockedIds.has(b.id));
   if (candidates.length === 0) return [];
 
+  const ctx = await computeCriteriaContext(tx, userId, new Set(candidates.map((b) => b.criteriaKey)));
+
   const newlyUnlocked: UnlockedBadgeDTO[] = [];
 
   for (const badge of candidates) {
-    const met = await isCriteriaMet(tx, userId, badge.criteriaKey, profile);
+    const met = isCriteriaMet(badge.criteriaKey, ctx);
     if (met) {
       await tx.userBadge.create({ data: { userId, badgeId: badge.id } });
       newlyUnlocked.push({

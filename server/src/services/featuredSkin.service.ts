@@ -1,4 +1,4 @@
-import { prisma } from "../lib/prisma";
+import { getActiveRewardItems } from "../lib/staticContentCache";
 
 const EPOCH_MONDAY = new Date("2026-01-05T00:00:00Z");
 const MS_PER_WEEK = 7 * 24 * 60 * 60 * 1000;
@@ -13,11 +13,8 @@ export const FEATURED_SKIN_DISCOUNT_PCT = 0.25;
  * keeps the rotation stable regardless of reseed order.
  */
 export async function getFeaturedSkinSlug(): Promise<string | null> {
-  const skins = await prisma.rewardItem.findMany({
-    where: { category: "SKIN", isActive: true },
-    orderBy: { slug: "asc" },
-    select: { slug: true },
-  });
+  const allItems = await getActiveRewardItems();
+  const skins = allItems.filter((item) => item.category === "SKIN").sort((a, b) => a.slug.localeCompare(b.slug));
   if (skins.length === 0) return null;
 
   const weekIndex = Math.floor((Date.now() - EPOCH_MONDAY.getTime()) / MS_PER_WEEK) % skins.length;
