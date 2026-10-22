@@ -16,7 +16,7 @@
     "@libsql/client": "0.8.1",
     "@prisma/adapter-libsql": "5.22.0",
     "@prisma/client": "^5.20.0",
-    "bcrypt": "^5.1.1",
+    "bcrypt": "^6.0.0",
     "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
@@ -37,7 +37,7 @@
   "allowScripts": {
     "@prisma/client@5.22.0": true,
     "@prisma/engines@5.22.0": true,
-    "bcrypt@5.1.1": true,
+    "bcrypt@6.0.0": true,
     "esbuild@0.28.2": true,
     "prisma@5.22.0": true
   }
