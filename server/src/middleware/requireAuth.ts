@@ -6,8 +6,9 @@ export interface AuthedRequest extends Request {
 }
 
 export function requireAuth(req: AuthedRequest, res: Response, next: NextFunction): void {
-  const token: unknown = req.cookies?.token;
-  if (!token || typeof token !== "string") {
+  const authHeader = req.headers.authorization;
+  const token = authHeader?.startsWith("Bearer ") ? authHeader.slice("Bearer ".length) : undefined;
+  if (!token) {
     res.status(401).json({ error: "Unauthorized" });
     return;
   }

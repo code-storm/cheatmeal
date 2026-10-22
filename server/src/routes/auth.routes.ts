@@ -6,25 +6,6 @@ import { requireAuth, type AuthedRequest } from "../middleware/requireAuth";
 const router = Router();
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const COOKIE_NAME = "token";
-const COOKIE_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
-
-// In production, the frontend (Vercel) and backend (Render) are on
-// different origins, so this is a cross-site cookie - sameSite: "none"
-// is required for the browser to send it at all, which in turn requires
-// secure: true (browsers reject sameSite: "none" without secure).
-// Locally both run on localhost over http, where "lax"/non-secure is both
-// sufficient and necessary (secure cookies aren't sent over plain http).
-const isProd = process.env.NODE_ENV === "production";
-
-function setAuthCookie(res: import("express").Response, token: string): void {
-  res.cookie(COOKIE_NAME, token, {
-    httpOnly: true,
-    sameSite: isProd ? "none" : "lax",
-    secure: isProd,
-    maxAge: COOKIE_MAX_AGE_MS,
-  });
-}
 
 router.post("/auth/signup", async (req, res, next) => {
   try {
@@ -53,9 +34,8 @@ router.post("/auth/signup", async (req, res, next) => {
     });
 
     const token = signJwt(user.id);
-    setAuthCookie(res, token);
 
-    res.status(201).json({ user: { id: user.id, email: user.email } });
+    res.status(201).json({ user: { id: user.id, email: user.email }, token });
   } catch (err) {
     next(err);
   }
@@ -84,22 +64,17 @@ router.post("/auth/login", async (req, res, next) => {
     }
 
     const token = signJwt(user.id);
-    setAuthCookie(res, token);
 
-    res.json({ user: { id: user.id, email: user.email } });
+    res.json({ user: { id: user.id, email: user.email }, token });
   } catch (err) {
     next(err);
   }
 });
 
+// Stateless JWT - there's no server-side session to invalidate. The real
+// "log out" action is the client deleting its stored token; this route
+// stays only so the client has a stable endpoint to call for symmetry.
 router.post("/auth/logout", (_req, res) => {
-  // clearCookie must be called with the same sameSite/secure attributes
-  // the cookie was originally set with, or some browsers won't match it.
-  res.clearCookie(COOKIE_NAME, {
-    httpOnly: true,
-    sameSite: isProd ? "none" : "lax",
-    secure: isProd,
-  });
   res.json({ ok: true });
 });
 

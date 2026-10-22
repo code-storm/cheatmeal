@@ -1,7 +1,9 @@
-// Thin shared fetch wrapper. Every call includes credentials so the httpOnly
-// auth cookie travels with the request, and every non-2xx response is turned
-// into a thrown ApiError carrying the backend's parsed error message so
-// callers (and React Query) can show something meaningful.
+// Thin shared fetch wrapper. Every call attaches the stored auth token (if
+// any) as a Bearer header, and every non-2xx response is turned into a
+// thrown ApiError carrying the backend's parsed error message so callers
+// (and React Query) can show something meaningful.
+
+import { getAuthToken } from "../lib/authToken";
 
 // Locally this is unset, so paths stay relative and go through Vite's dev
 // proxy (see vite.config.ts) straight to localhost:4000. In production
@@ -54,12 +56,15 @@ export async function apiRequest<T>(
   options: RequestOptions = {},
 ): Promise<T> {
   const { method = "GET", body, signal } = options;
+  const token = getAuthToken();
 
   const res = await fetch(`${API_BASE_URL}${path}`, {
     method,
-    credentials: "include",
     signal,
-    headers: body !== undefined ? { "Content-Type": "application/json" } : undefined,
+    headers: {
+      ...(body !== undefined ? { "Content-Type": "application/json" } : {}),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
     body: body !== undefined ? JSON.stringify(body) : undefined,
   });
 

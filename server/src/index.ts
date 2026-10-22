@@ -1,6 +1,5 @@
 import "dotenv/config";
 import express, { type Request, type Response, type NextFunction } from "express";
-import cookieParser from "cookie-parser";
 import cors from "cors";
 
 import healthRoutes from "./routes/health.routes";
@@ -19,11 +18,9 @@ const app = express();
 app.use(
   cors({
     origin: process.env.CLIENT_ORIGIN ?? "http://localhost:5173",
-    credentials: true,
   })
 );
 app.use(express.json());
-app.use(cookieParser());
 
 app.use("/api", healthRoutes);
 app.use("/api", authRoutes);

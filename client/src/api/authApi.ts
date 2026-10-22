@@ -15,13 +15,13 @@ export const authApi = {
   me: () => apiRequest<MeResponse>("/api/auth/me"),
 
   signup: (credentials: AuthCredentials) =>
-    apiRequest<{ user: User }>("/api/auth/signup", {
+    apiRequest<{ user: User; token: string }>("/api/auth/signup", {
       method: "POST",
       body: credentials,
     }),
 
   login: (credentials: AuthCredentials) =>
-    apiRequest<{ user: User }>("/api/auth/login", {
+    apiRequest<{ user: User; token: string }>("/api/auth/login", {
       method: "POST",
       body: credentials,
     }),

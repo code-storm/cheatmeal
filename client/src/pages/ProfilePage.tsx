@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { ErrorState } from "../components/ErrorState";
 import { LoadingState } from "../components/LoadingState";
 import { useLogout } from "../hooks/useAuthActions";
@@ -15,13 +14,19 @@ const TRIMESTER_LABEL: Record<Trimester, string> = {
 };
 
 export default function ProfilePage() {
-  const navigate = useNavigate();
   const { data, isLoading, isError, error, refetch } = useProfile();
   const logout = useLogout();
 
   function handleLogout() {
+    // A full reload, not a client-side navigate: logout clears the entire
+    // React Query cache, which otherwise races with still-mounted pages'
+    // query observers re-fetching (now token-less) protected data before
+    // the route guards have a chance to redirect - surfacing as a flash
+    // of a 401 error page instead of a clean bounce to /login.
     logout.mutate(undefined, {
-      onSuccess: () => navigate("/login", { replace: true }),
+      onSuccess: () => {
+        window.location.href = "/login";
+      },
     });
   }
 
