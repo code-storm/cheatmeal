@@ -195,7 +195,6 @@ export function AppLayout() {
         </filter>
       </svg>
       <div className="ambient-bg-image" aria-hidden="true" />
-      <div className="ambient-bg-scrim" aria-hidden="true" />
       <div className="ambient-fx" aria-hidden="true" />
       <RewardToast toast={toast} />
       <AnimatePresence>
