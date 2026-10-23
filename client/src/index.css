@@ -451,6 +451,27 @@ input {
   gap: 28px;
 }
 
+/* Unlike .reward-card/.badge-card/.app-header__inner, .page-header had
+   no backing surface at all - just text straight on the page
+   background. Harmless against the soft gradients evergreen skins use,
+   but illegible against real photographic event art (reported: the
+   "Rewards" title and "Skins" heading were unreadable against the
+   Tokidoki Cactus Friends background). --glass-bg-opaque defaults to
+   `transparent` here (every evergreen skin never sets it, so this is a
+   complete no-op - no padding/background/blur change for them); event
+   skins get a near-opaque backing plate behind just this text block,
+   so the art stays fully visible everywhere EXCEPT directly behind it,
+   rather than scrimming the whole page. */
+body[data-theme="skin-tokidoki-cactus"] .page-header,
+body[data-theme="skin-tokidoki-pastel"] .page-header,
+body[data-theme="skin-tokidoki-neon"] .page-header {
+  background: color-mix(in srgb, var(--glass-tint) 8%, var(--glass-bg-opaque));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  border-radius: var(--radius-lg);
+  padding: 16px 20px;
+}
+
 .page-header h1 {
   font-size: 1.7rem;
 }
@@ -1563,6 +1584,19 @@ input {
   font-family: var(--font-heading);
   font-size: 1.2rem;
   color: var(--color-ink);
+  display: inline-block;
+}
+
+/* Same bare-text-on-busy-art problem as .page-header, same fix: a
+   backing plate behind just this heading's text, event skins only. */
+body[data-theme="skin-tokidoki-cactus"] .rewards-section__heading,
+body[data-theme="skin-tokidoki-pastel"] .rewards-section__heading,
+body[data-theme="skin-tokidoki-neon"] .rewards-section__heading {
+  background: color-mix(in srgb, var(--glass-tint) 8%, var(--glass-bg-opaque));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  border-radius: var(--radius-sm);
+  padding: 4px 10px;
 }
 
 .rewards-grid {
