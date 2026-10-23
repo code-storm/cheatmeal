@@ -112,15 +112,13 @@ export const badges: BadgeSeed[] = [
     criteriaKey: "FULL_TERM_REACHED",
   },
   // --- CheatMeal x Tokidoki (crossover event) -------------------------
-  // imageUrl values point at a cropped region of the sprite sheet - see
-  // the comment in content/rewards.ts above its Tokidoki items.
   {
     slug: "tokidoki-debut",
     name: "Tokidoki Debut",
     description: "Unlocked your first item from the CheatMeal x Tokidoki drop.",
     icon: "🎉",
     criteriaKey: "EVENT_FIRST_ITEM",
-    imageUrl: "/events/tokidoki/sprite.png?x=695&y=330&w=180&h=175", // donutGirl
+    imageUrl: "/events/tokidoki/badge-debut-art.jpeg",
     eventSlug: "cheatmeal-x-tokidoki",
   },
   {
@@ -129,6 +127,10 @@ export const badges: BadgeSeed[] = [
     description: "Collected every item from the CheatMeal x Tokidoki drop.",
     icon: "🏅",
     criteriaKey: "EVENT_SET_COMPLETE",
+    // The only remaining consumer of the single sprite sheet - a cropped
+    // region (query params decoded by utils/spriteImage.ts on the
+    // client) rather than a dedicated file, since the single star-face
+    // character in it fit this badge well enough on its own.
     imageUrl: "/events/tokidoki/sprite.png?x=295&y=580&w=130&h=115", // starFace
     eventSlug: "cheatmeal-x-tokidoki",
   },

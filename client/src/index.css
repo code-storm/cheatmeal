@@ -2227,10 +2227,23 @@ body[data-theme="sunset-ember"] {
 }
 
 /* ---- CheatMeal x Tokidoki (crossover event skins) ----
-   The only two skins with --skin-bg-image set (real illustrated art,
+   The only three skins with --skin-bg-image set (real illustrated art,
    painted into the .ambient-bg-image layer above, BEHIND this skin's own
    .ambient-fx particle animation - see the layer comment). Every other
-   skin leaves this unset and falls back to `none`. */
+   skin leaves this unset and falls back to `none`. Each points at its
+   own dedicated background file (not the shared sprite sheet) since
+   these three are full-canvas art, not single-character crops. */
+
+body[data-theme="skin-tokidoki-cactus"] {
+  --accent: #5a9c4a;
+  --accent-dark: #3f7a33;
+  --accent-light: #e2f2da;
+  --aurora-stop-1: #f5e6c8;
+  --aurora-stop-2: #eef2da;
+  --aurora-stop-3: #d9ecd4;
+  --glass-tint: #8fd27a;
+  --skin-bg-image: url("/events/tokidoki/skin-cactus-bg.webp");
+}
 
 body[data-theme="skin-tokidoki-pastel"] {
   --accent: #f28cb0;
@@ -2240,7 +2253,7 @@ body[data-theme="skin-tokidoki-pastel"] {
   --aurora-stop-2: #fde3f0;
   --aurora-stop-3: #dcecf8;
   --glass-tint: #f4b8d8;
-  --skin-bg-image: url("/events/tokidoki/sprite.png");
+  --skin-bg-image: url("/events/tokidoki/skin-pastel-bg.jpeg");
 }
 
 body[data-theme="skin-tokidoki-neon"] {
@@ -2251,7 +2264,7 @@ body[data-theme="skin-tokidoki-neon"] {
   --aurora-stop-2: #1f1430;
   --aurora-stop-3: #3a1f4a;
   --glass-tint: #ff3d7f;
-  --skin-bg-image: url("/events/tokidoki/sprite.png");
+  --skin-bg-image: url("/events/tokidoki/skin-neon-bg.webp");
 }
 
 /* ---- Dark overrides ---- */
@@ -2334,6 +2347,16 @@ body[data-theme="skin-tokidoki-neon"] {
   --aurora-stop-2: #331a22;
   --aurora-stop-3: #26130f;
   --glass-tint: #e88a5e;
+}
+
+:root[data-color-scheme="dark"] body[data-theme="skin-tokidoki-cactus"] {
+  --accent: #8fd27a;
+  --accent-dark: #aee89c;
+  --accent-light: #243a1e;
+  --aurora-stop-1: #1c2416;
+  --aurora-stop-2: #222c1a;
+  --aurora-stop-3: #18221a;
+  --glass-tint: #6fb85a;
 }
 
 :root[data-color-scheme="dark"] body[data-theme="skin-tokidoki-pastel"] {
