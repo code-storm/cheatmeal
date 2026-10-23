@@ -6,6 +6,7 @@ import { isDietPreference } from "../lib/enums";
 import { awardPoints } from "../services/points.service";
 import { LOGIN_BONUS_POINTS } from "../content/points";
 import { levelForPoints } from "../content/levels";
+import { getActiveRewardItems } from "../lib/staticContentCache";
 
 const router = Router();
 
@@ -70,7 +71,25 @@ router.get("/profile", requireAuth, async (req: AuthedRequest, res, next) => {
     const trimester = trimesterForWeek(currentPregnancyWeek);
     const level = levelForPoints(profile.totalPointsEarned);
 
-    res.json({ profile, currentPregnancyWeek, trimester, level, ...(loginBonusAwarded ? { loginBonusAwarded } : {}) });
+    // Resolves the active avatar's real art/icon from the already-cached
+    // catalog (no extra query) - lets the header show real illustrated
+    // avatars (e.g. the Tokidoki mascot) instead of being limited to a
+    // hardcoded emoji lookup table on the client.
+    let activeAvatar: { icon: string; imageUrl: string | null } | null = null;
+    if (profile.activeAvatarSlug) {
+      const items = await getActiveRewardItems();
+      const item = items.find((i) => i.slug === profile!.activeAvatarSlug);
+      if (item) activeAvatar = { icon: item.icon, imageUrl: item.imageUrl };
+    }
+
+    res.json({
+      profile,
+      currentPregnancyWeek,
+      trimester,
+      level,
+      activeAvatar,
+      ...(loginBonusAwarded ? { loginBonusAwarded } : {}),
+    });
   } catch (err) {
     next(err);
   }

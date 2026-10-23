@@ -277,16 +277,51 @@ body {
    property can't paint both a CSS pattern and a photographic image at
    once. Evergreen skins never set --skin-bg-image, so this div is a
    complete no-op (background-image: none) for them - zero visual or
-   perf cost until an event skin's body[data-theme] block sets it. */
+   perf cost until an event skin's body[data-theme] block sets it.
+
+   filter: blur() is applied HERE, on the image itself, rather than
+   relying only on every card's own backdrop-filter to soften it: a
+   sharp, busy photographic background behind ~20 simultaneously-
+   blurring glass cards made backdrop-filter re-sample fine detail on
+   every scroll frame (visibly janky), and left too much of the
+   source image's own contrast showing through card text even with
+   the blur - pre-blurring the source once removes the fine detail
+   before any card ever has to resample it, fixing both the jank and
+   (combined with the scrim below) the legibility problem. scale(1.08)
+   hides the blur's edge-softening from the viewport edges. */
 .ambient-bg-image {
   position: fixed;
-  inset: 0;
+  inset: -4%;
   z-index: -3;
   pointer-events: none;
   background-image: var(--skin-bg-image, none);
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
+  filter: blur(18px) saturate(0.9);
+  transform: scale(1.08);
+}
+
+/* A dark/light scrim, ABOVE the blurred art but still behind .ambient-fx
+   and all real content, so every card's text keeps the same contrast
+   against an event background that it already has against an
+   evergreen skin's much calmer gradient background - without this,
+   busy full-color art behind the glass cards made several of them
+   barely readable regardless of blur amount. Opacity is deliberately
+   asymmetric (light mode needs more lightening than dark mode needs
+   darkening, since the existing --color-ink/--color-cream contrast
+   ratio differs between the two). */
+.ambient-bg-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: -3;
+  pointer-events: none;
+  background: var(--color-cream);
+  opacity: var(--skin-bg-scrim-opacity, 0);
+}
+
+:root[data-color-scheme="dark"] .ambient-bg-scrim {
+  background: #0c0d12;
 }
 
 #root {
@@ -1323,6 +1358,14 @@ input {
   line-height: 1;
 }
 
+.app-avatar--image {
+  width: 26px;
+  height: 26px;
+  object-fit: cover;
+  border-radius: 50%;
+  border: 1px solid var(--glass-border);
+}
+
 .points-badge {
   display: inline-flex;
   align-items: center;
@@ -2243,6 +2286,7 @@ body[data-theme="skin-tokidoki-cactus"] {
   --aurora-stop-3: #d9ecd4;
   --glass-tint: #8fd27a;
   --skin-bg-image: url("/events/tokidoki/skin-cactus-bg.webp");
+  --skin-bg-scrim-opacity: 0.55;
 }
 
 body[data-theme="skin-tokidoki-pastel"] {
@@ -2253,7 +2297,8 @@ body[data-theme="skin-tokidoki-pastel"] {
   --aurora-stop-2: #fde3f0;
   --aurora-stop-3: #dcecf8;
   --glass-tint: #f4b8d8;
-  --skin-bg-image: url("/events/tokidoki/skin-pastel-bg.jpeg");
+  --skin-bg-image: url("/events/tokidoki/skin-pastel-bg.webp");
+  --skin-bg-scrim-opacity: 0.55;
 }
 
 body[data-theme="skin-tokidoki-neon"] {
@@ -2265,6 +2310,7 @@ body[data-theme="skin-tokidoki-neon"] {
   --aurora-stop-3: #3a1f4a;
   --glass-tint: #ff3d7f;
   --skin-bg-image: url("/events/tokidoki/skin-neon-bg.webp");
+  --skin-bg-scrim-opacity: 0.5;
 }
 
 /* ---- Dark overrides ---- */

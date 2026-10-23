@@ -27,8 +27,8 @@ export const events: EventSeed[] = [
       "A limited-time collaboration bringing Tokidoki's signature pop-art characters into CheatMeal - exclusive skins, an avatar, and a completionist badge, available only while the drop is live.",
     sponsorName: "Tokidoki",
     themeSlug: "tokidoki",
-    heroImageUrl: "/events/tokidoki/hero.avif",
-    cardImageUrl: "/events/tokidoki/card-square.jpeg",
+    heroImageUrl: "/events/tokidoki/hero.webp",
+    cardImageUrl: "/events/tokidoki/card.webp",
     startsAt: "2026-11-15T00:00:00Z",
     endsAt: "2026-12-15T00:00:00Z",
     // Each tier grants a RewardItem (via UserReward) on crossing its

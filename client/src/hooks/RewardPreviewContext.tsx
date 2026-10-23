@@ -5,6 +5,8 @@ export interface RewardPreview {
   category: RewardCategory;
   slug: string;
   name: string;
+  icon: string;
+  imageUrl: string | null;
 }
 
 interface RewardPreviewContextValue {

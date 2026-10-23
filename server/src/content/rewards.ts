@@ -192,7 +192,7 @@ export const rewardItems: RewardItemSeed[] = [
     rarity: "EPIC",
     costPoints: 260,
     icon: "☁️",
-    imageUrl: "/events/tokidoki/skin-pastel-bg.jpeg",
+    imageUrl: "/events/tokidoki/skin-pastel-bg.webp",
     eventSlug: "cheatmeal-x-tokidoki",
   },
   {

@@ -111,9 +111,18 @@ export function AppLayout() {
     prevLevelIndexRef.current = level.index;
   }, [level, pushToast]);
 
+  // A preview (real icon/imageUrl, already carried on the preview object)
+  // takes priority over the real activeAvatar the profile request
+  // resolved server-side; AVATAR_ICON_BY_SLUG is only a fallback for the
+  // rare case neither is available (e.g. still loading).
   const effectiveAvatarSlug =
     preview?.category === "AVATAR" ? preview.slug : profile?.activeAvatarSlug ?? null;
-  const avatarIcon = effectiveAvatarSlug ? AVATAR_ICON_BY_SLUG[effectiveAvatarSlug] ?? "🙂" : null;
+  const avatarImageUrl = preview?.category === "AVATAR" ? preview.imageUrl : data?.activeAvatar?.imageUrl ?? null;
+  const avatarIcon = effectiveAvatarSlug
+    ? (preview?.category === "AVATAR" ? preview.icon : data?.activeAvatar?.icon) ??
+      AVATAR_ICON_BY_SLUG[effectiveAvatarSlug] ??
+      "🙂"
+    : null;
 
   // Rendered twice (top pill nav on desktop, fixed bottom bar on mobile/
   // tablet) rather than CSS-repositioned in place: backdrop-filter on an
@@ -186,6 +195,7 @@ export function AppLayout() {
         </filter>
       </svg>
       <div className="ambient-bg-image" aria-hidden="true" />
+      <div className="ambient-bg-scrim" aria-hidden="true" />
       <div className="ambient-fx" aria-hidden="true" />
       <RewardToast toast={toast} />
       <AnimatePresence>
@@ -210,10 +220,14 @@ export function AppLayout() {
           <nav className="app-nav app-nav--top">{navLinks}</nav>
           <div className="app-header__status">
             <ColorSchemeToggle scheme={scheme} onToggle={toggleScheme} />
-            {avatarIcon && (
-              <span className="app-avatar" aria-hidden="true">
-                {avatarIcon}
-              </span>
+            {avatarImageUrl ? (
+              <img src={avatarImageUrl} alt="" className="app-avatar app-avatar--image" aria-hidden="true" />
+            ) : (
+              avatarIcon && (
+                <span className="app-avatar" aria-hidden="true">
+                  {avatarIcon}
+                </span>
+              )
             )}
             {level && <LevelProgress level={level} compact />}
             {profile && <StreakBadge currentStreak={profile.currentStreak} />}

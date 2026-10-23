@@ -89,11 +89,17 @@ export interface LevelInfo {
   totalForNextLevel: number | null;
 }
 
+export interface ActiveAvatarInfo {
+  icon: string;
+  imageUrl: string | null;
+}
+
 export interface ProfileResponse {
   profile: Profile;
   currentPregnancyWeek: number;
   trimester: Trimester;
   level: LevelInfo;
+  activeAvatar: ActiveAvatarInfo | null;
   loginBonusAwarded?: { points: number };
 }
 

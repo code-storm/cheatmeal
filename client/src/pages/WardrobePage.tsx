@@ -51,7 +51,7 @@ export default function WardrobePage() {
     if (preview?.slug === item.slug) {
       clearPreview();
     } else {
-      startPreview({ category: item.category, slug: item.slug, name: item.name });
+      startPreview({ category: item.category, slug: item.slug, name: item.name, icon: item.icon, imageUrl: item.imageUrl });
     }
   }
 
