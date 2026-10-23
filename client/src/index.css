@@ -269,6 +269,26 @@ body {
   }
 }
 
+/* A SEPARATE layer, behind .ambient-fx (z-index -3 vs -2), for real
+   illustrated background art - event skins only, see content/rewards.ts
+   and events.ts. Can't reuse .ambient-fx's own background-image, since
+   that property already holds every evergreen skin's CSS particle/
+   gradient pattern (petals-drift, fireflies-rise, etc.) - a single
+   property can't paint both a CSS pattern and a photographic image at
+   once. Evergreen skins never set --skin-bg-image, so this div is a
+   complete no-op (background-image: none) for them - zero visual or
+   perf cost until an event skin's body[data-theme] block sets it. */
+.ambient-bg-image {
+  position: fixed;
+  inset: 0;
+  z-index: -3;
+  pointer-events: none;
+  background-image: var(--skin-bg-image, none);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
 #root {
   min-height: 100vh;
 }
@@ -1391,6 +1411,118 @@ input {
 
 /* -------------------------------- Rewards -------------------------------- */
 
+/* --------------------------- Crossover events ----------------------------- */
+
+.event-banner {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--glass-tint) 14%, var(--glass-bg));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow-soft), var(--shadow-glass-rim);
+  text-decoration: none;
+  color: inherit;
+}
+
+.event-banner--urgent {
+  border-color: var(--accent-dark);
+  box-shadow: var(--shadow-glow);
+}
+
+.event-banner__image {
+  width: 56px;
+  height: 56px;
+  object-fit: cover;
+  border-radius: var(--radius-md);
+  flex-shrink: 0;
+}
+
+.event-banner__content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.event-banner__name {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--color-ink);
+}
+
+.event-banner__tagline {
+  font-size: 0.82rem;
+  color: var(--color-ink-soft);
+}
+
+.event-banner__countdown {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--accent-dark);
+}
+
+.event-detail__hero {
+  width: 100%;
+  max-height: 180px;
+  object-fit: cover;
+  border-radius: var(--radius-lg);
+  margin-bottom: 10px;
+}
+
+.event-detail__description {
+  font-size: 0.88rem;
+  color: var(--color-ink-soft);
+  line-height: 1.5;
+}
+
+.event-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px 18px;
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--glass-tint) 10%, var(--glass-bg));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  border: 1px solid var(--glass-border);
+}
+
+.event-progress__header {
+  display: flex;
+  justify-content: space-between;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.event-progress__next {
+  font-size: 0.8rem;
+  color: var(--color-ink-soft);
+}
+
+.event-progress__tiers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.event-progress__tier-chip {
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: var(--radius-pill);
+  background: var(--accent-light);
+  color: var(--color-ink-soft);
+}
+
+.event-progress__tier-chip--claimed {
+  background: var(--accent);
+  color: var(--accent-contrast);
+}
+
 .rewards-section {
   display: flex;
   flex-direction: column;
@@ -1497,6 +1629,15 @@ input {
   line-height: 1;
 }
 
+.badge-card__image {
+  width: 72px;
+  height: 72px;
+  object-fit: cover;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow-soft);
+}
+
 .badge-card__name {
   font-weight: 700;
   font-size: 1rem;
@@ -1511,6 +1652,27 @@ input {
 .reward-card__icon {
   font-size: 2rem;
   line-height: 1;
+}
+
+.reward-card__image {
+  width: 96px;
+  height: 96px;
+  object-fit: cover;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow-soft);
+  margin: 2px 0 4px;
+}
+
+.reward-card__event-chip,
+.badge-card__event-chip {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--accent-contrast);
+  background: var(--accent);
+  padding: 2px 10px;
+  border-radius: var(--radius-pill);
+  align-self: center;
 }
 
 .reward-card__name {
@@ -1555,6 +1717,28 @@ input {
   background: var(--accent-light);
   padding: 2px 10px;
   border-radius: var(--radius-pill);
+}
+
+.reward-card__limited--urgent {
+  color: var(--accent-contrast);
+  background: var(--accent-dark);
+  animation: urgent-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes urgent-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reward-card__limited--urgent {
+    animation: none;
+  }
 }
 
 .reward-card--expired {
@@ -2042,6 +2226,34 @@ body[data-theme="sunset-ember"] {
   --glass-tint: #f0a888;
 }
 
+/* ---- CheatMeal x Tokidoki (crossover event skins) ----
+   The only two skins with --skin-bg-image set (real illustrated art,
+   painted into the .ambient-bg-image layer above, BEHIND this skin's own
+   .ambient-fx particle animation - see the layer comment). Every other
+   skin leaves this unset and falls back to `none`. */
+
+body[data-theme="skin-tokidoki-pastel"] {
+  --accent: #f28cb0;
+  --accent-dark: #d46a90;
+  --accent-light: #fde3ee;
+  --aurora-stop-1: #e8ddf5;
+  --aurora-stop-2: #fde3f0;
+  --aurora-stop-3: #dcecf8;
+  --glass-tint: #f4b8d8;
+  --skin-bg-image: url("/events/tokidoki/skin-pastel.png");
+}
+
+body[data-theme="skin-tokidoki-neon"] {
+  --accent: #ff3d7f;
+  --accent-dark: #c92d63;
+  --accent-light: #ffe0ec;
+  --aurora-stop-1: #2a1a3d;
+  --aurora-stop-2: #1f1430;
+  --aurora-stop-3: #3a1f4a;
+  --glass-tint: #ff3d7f;
+  --skin-bg-image: url("/events/tokidoki/skin-neon.png");
+}
+
 /* ---- Dark overrides ---- */
 
 :root[data-color-scheme="dark"] body[data-theme="morning-bloom"] {
@@ -2122,6 +2334,26 @@ body[data-theme="sunset-ember"] {
   --aurora-stop-2: #331a22;
   --aurora-stop-3: #26130f;
   --glass-tint: #e88a5e;
+}
+
+:root[data-color-scheme="dark"] body[data-theme="skin-tokidoki-pastel"] {
+  --accent: #ffa8c8;
+  --accent-dark: #ffc4dc;
+  --accent-light: #3a2430;
+  --aurora-stop-1: #241c30;
+  --aurora-stop-2: #301f2c;
+  --aurora-stop-3: #1c2436;
+  --glass-tint: #ff9ec4;
+}
+
+:root[data-color-scheme="dark"] body[data-theme="skin-tokidoki-neon"] {
+  --accent: #ff6b9e;
+  --accent-dark: #ff9ec4;
+  --accent-light: #401c30;
+  --aurora-stop-1: #180f24;
+  --aurora-stop-2: #120a1c;
+  --aurora-stop-3: #20122e;
+  --glass-tint: #ff3d7f;
 }
 
 /* ---- Signature ambient animations (painted into .ambient-fx) ---- */

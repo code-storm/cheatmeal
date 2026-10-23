@@ -17,6 +17,7 @@ import ProfilePage from "./pages/ProfilePage";
 import MacroHistoryPage from "./pages/MacroHistoryPage";
 import RewardsPage from "./pages/RewardsPage";
 import WardrobePage from "./pages/WardrobePage";
+import EventDetailPage from "./pages/EventDetailPage";
 
 export default function App() {
   return (
@@ -62,6 +63,7 @@ export default function App() {
                 <Route path="/macros" element={<MacroHistoryPage />} />
                 <Route path="/rewards" element={<RewardsPage />} />
                 <Route path="/wardrobe" element={<WardrobePage />} />
+                <Route path="/events/:slug" element={<EventDetailPage />} />
                 <Route path="/profile" element={<ProfilePage />} />
               </Route>
 

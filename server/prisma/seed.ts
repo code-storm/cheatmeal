@@ -6,6 +6,7 @@ import { foodAvoidRules, activityAvoidRules } from "../src/content/avoidRules";
 import { rewardItems } from "../src/content/rewards";
 import { badges } from "../src/content/badges";
 import { challengeTemplates } from "../src/content/challenges";
+import { events } from "../src/content/events";
 
 const prisma = new PrismaClient();
 
@@ -83,7 +84,42 @@ async function main() {
     })),
   });
 
+  // Events are seeded before rewardItems/badges so their eventSlug ->
+  // eventId lookups below resolve to a real row.
+  const eventIdBySlug = new Map<string, string>();
+  for (const event of events) {
+    const row = await prisma.event.upsert({
+      where: { slug: event.slug },
+      update: {
+        name: event.name,
+        tagline: event.tagline,
+        description: event.description,
+        sponsorName: event.sponsorName ?? null,
+        themeSlug: event.themeSlug,
+        heroImageUrl: event.heroImageUrl ?? null,
+        cardImageUrl: event.cardImageUrl ?? null,
+        startsAt: new Date(event.startsAt),
+        endsAt: new Date(event.endsAt),
+        isActive: true,
+      },
+      create: {
+        slug: event.slug,
+        name: event.name,
+        tagline: event.tagline,
+        description: event.description,
+        sponsorName: event.sponsorName ?? null,
+        themeSlug: event.themeSlug,
+        heroImageUrl: event.heroImageUrl ?? null,
+        cardImageUrl: event.cardImageUrl ?? null,
+        startsAt: new Date(event.startsAt),
+        endsAt: new Date(event.endsAt),
+      },
+    });
+    eventIdBySlug.set(event.slug, row.id);
+  }
+
   for (const item of rewardItems) {
+    const eventId = item.eventSlug ? eventIdBySlug.get(item.eventSlug) ?? null : null;
     await prisma.rewardItem.upsert({
       where: { slug: item.slug },
       update: {
@@ -97,6 +133,8 @@ async function main() {
         isActive: true,
         availableFromWeek: item.availableFromWeek ?? null,
         availableUntilWeek: item.availableUntilWeek ?? null,
+        imageUrl: item.imageUrl ?? null,
+        eventId,
       },
       create: {
         slug: item.slug,
@@ -109,11 +147,14 @@ async function main() {
         powerKey: item.powerKey ?? null,
         availableFromWeek: item.availableFromWeek ?? null,
         availableUntilWeek: item.availableUntilWeek ?? null,
+        imageUrl: item.imageUrl ?? null,
+        eventId,
       },
     });
   }
 
   for (const badge of badges) {
+    const eventId = badge.eventSlug ? eventIdBySlug.get(badge.eventSlug) ?? null : null;
     await prisma.badge.upsert({
       where: { slug: badge.slug },
       update: {
@@ -122,6 +163,8 @@ async function main() {
         icon: badge.icon,
         criteriaKey: badge.criteriaKey,
         isActive: true,
+        imageUrl: badge.imageUrl ?? null,
+        eventId,
       },
       create: {
         slug: badge.slug,
@@ -129,6 +172,8 @@ async function main() {
         description: badge.description,
         icon: badge.icon,
         criteriaKey: badge.criteriaKey,
+        imageUrl: badge.imageUrl ?? null,
+        eventId,
       },
     });
   }
@@ -156,7 +201,7 @@ async function main() {
   }
 
   console.log(
-    `Seeded ${allTaskTemplates.length} task templates, ${foodAvoidRules.length} food avoid rules, ${activityAvoidRules.length} activity avoid rules, ${rewardItems.length} reward items, ${badges.length} badges, ${challengeTemplates.length} daily challenge templates.`
+    `Seeded ${allTaskTemplates.length} task templates, ${foodAvoidRules.length} food avoid rules, ${activityAvoidRules.length} activity avoid rules, ${events.length} events, ${rewardItems.length} reward items, ${badges.length} badges, ${challengeTemplates.length} daily challenge templates.`
   );
 }
 

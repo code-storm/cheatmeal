@@ -14,6 +14,13 @@ export interface RewardItemSeed {
   // Omitted (undefined) on every other item - always purchasable.
   availableFromWeek?: number;
   availableUntilWeek?: number;
+  // Real illustrated art (overrides the emoji icon/CSS swatch on the
+  // client when present). Omitted on every evergreen item today.
+  imageUrl?: string;
+  // Crossover-event scoping: resolved to the real Event row's id by slug
+  // lookup at seed time (same string-key indirection TaskTemplate's
+  // rotationPoolKey already uses) - see content/events.ts and seed.ts.
+  eventSlug?: string;
 }
 
 export const rewardItems: RewardItemSeed[] = [
@@ -143,6 +150,73 @@ export const rewardItems: RewardItemSeed[] = [
     rarity: "COMMON",
     costPoints: 100,
     icon: "🌈",
+  },
+
+  // --- CheatMeal x Tokidoki (crossover event) -------------------------
+  // All items below are scoped to the "cheatmeal-x-tokidoki" Event
+  // (content/events.ts) via eventSlug - only newly-purchasable while that
+  // event is ACTIVE/ENDING_SOON (see isPurchasableForEvent in
+  // rewards.routes.ts); ownership never expires once bought, same rule as
+  // the pregnancy-week scarcity items above. The 4 tier-ladder items
+  // (avatar-tokidoki-mascot, skin-tokidoki-pastel, skin-tokidoki-neon,
+  // badge-tokidoki-completionist's underlying badge) are also granted
+  // automatically on crossing the event's points thresholds - see
+  // content/events.ts's `tiers` and points.service.ts.
+  {
+    slug: "avatar-tokidoki-mascot",
+    name: "Tokidoki Mascot",
+    description: "A pop-art cactus friend, straight from the Tokidoki universe.",
+    category: "AVATAR",
+    rarity: "COMMON",
+    costPoints: 80,
+    icon: "🌵",
+    imageUrl: "/events/tokidoki/avatar-mascot.png",
+    eventSlug: "cheatmeal-x-tokidoki",
+  },
+  {
+    slug: "skin-tokidoki-cactus",
+    name: "Tokidoki Cactus Garden",
+    description: "Warm desert tones with little pop-art cactus friends scattered across the screen.",
+    category: "SKIN",
+    rarity: "RARE",
+    costPoints: 180,
+    icon: "🌵",
+    imageUrl: "/events/tokidoki/skin-cactus.png",
+    eventSlug: "cheatmeal-x-tokidoki",
+  },
+  {
+    slug: "skin-tokidoki-pastel",
+    name: "Tokidoki Pastel Dream",
+    description: "Soft pastel pop-art clouds and stars drifting across the screen.",
+    category: "SKIN",
+    rarity: "EPIC",
+    costPoints: 260,
+    icon: "☁️",
+    imageUrl: "/events/tokidoki/skin-pastel.png",
+    eventSlug: "cheatmeal-x-tokidoki",
+  },
+  {
+    slug: "skin-tokidoki-neon",
+    name: "Tokidoki Neon Pop",
+    description: "Saturated neon pop-art, with bold outlined characters drifting by.",
+    category: "SKIN",
+    rarity: "LEGENDARY",
+    costPoints: 420,
+    icon: "🎆",
+    imageUrl: "/events/tokidoki/skin-neon.png",
+    eventSlug: "cheatmeal-x-tokidoki",
+  },
+  {
+    slug: "power-tokidoki-fresh-pick",
+    name: "Tokidoki Fresh Pick",
+    description: "A limited-edition reskin of Fresh Pick - re-roll a meal ignoring the 7-day recency rule.",
+    category: "POWER",
+    rarity: "RARE",
+    costPoints: 220,
+    icon: "🎲",
+    powerKey: "FRESH_PICK",
+    imageUrl: "/events/tokidoki/power-fresh-pick.png",
+    eventSlug: "cheatmeal-x-tokidoki",
   },
 
   // Powers - functional unlocks.

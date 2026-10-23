@@ -3,6 +3,7 @@ import express, { type Request, type Response, type NextFunction } from "express
 import cors from "cors";
 
 import { warmStaticContentCache } from "./lib/staticContentCache";
+import { getEvents } from "./lib/eventCache";
 import healthRoutes from "./routes/health.routes";
 import authRoutes from "./routes/auth.routes";
 import onboardingRoutes from "./routes/onboarding.routes";
@@ -13,6 +14,7 @@ import rewardsRoutes from "./routes/rewards.routes";
 import challengesRoutes from "./routes/challenges.routes";
 import badgesRoutes from "./routes/badges.routes";
 import tipsRoutes from "./routes/tips.routes";
+import eventsRoutes from "./routes/events.routes";
 
 const app = express();
 
@@ -33,6 +35,7 @@ app.use("/api", rewardsRoutes);
 app.use("/api", challengesRoutes);
 app.use("/api", badgesRoutes);
 app.use("/api", tipsRoutes);
+app.use("/api", eventsRoutes);
 
 // Catch-all 404 for unmatched /api routes.
 app.use("/api", (_req: Request, res: Response) => {
@@ -51,8 +54,12 @@ const PORT = process.env.PORT ? Number(process.env.PORT) : 4000;
 
 // Must resolve before accepting any request - see the deadlock note in
 // staticContentCache.ts for why a cold cache getter can never be allowed
-// to run for the first time from inside an open transaction.
-warmStaticContentCache()
+// to run for the first time from inside an open transaction. getEvents()
+// is only short-TTL-cached (not eternal, see eventCache.ts), but it must
+// still be warmed here for the exact same reason: awardPoints credits
+// event progress from inside an open $transaction, and that call must
+// never be the first-ever touch of a cold getEvents() Promise.
+Promise.all([warmStaticContentCache(), getEvents()])
   .then(() => {
     app.listen(PORT, () => {
       console.log(`CheatMeal server listening on http://localhost:${PORT}`);

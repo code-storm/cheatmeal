@@ -120,6 +120,8 @@ export type PowerKey = "TOMORROW_PREVIEW" | "FRESH_PICK";
 
 export type Rarity = "COMMON" | "RARE" | "EPIC" | "LEGENDARY";
 
+export type EventLifecycleStage = "UPCOMING" | "ACTIVE" | "ENDING_SOON" | "RETIRED";
+
 export interface RewardItemDTO {
   slug: string;
   name: string;
@@ -130,11 +132,15 @@ export interface RewardItemDTO {
   effectiveCostPoints: number;
   featured: boolean;
   icon: string;
+  imageUrl: string | null;
   powerKey: PowerKey | null;
   unlocked: boolean;
   purchasable: boolean;
   availableFromWeek: number | null;
   availableUntilWeek: number | null;
+  eventSlug: string | null;
+  eventName: string | null;
+  eventStage: EventLifecycleStage | null;
 }
 
 export interface RewardsResponse {
@@ -195,13 +201,51 @@ export interface BadgeDTO {
   name: string;
   description: string;
   icon: string;
+  imageUrl?: string | null;
   criteriaKey?: string;
   unlocked?: boolean;
   unlockedAt?: string | null;
+  eventSlug?: string | null;
+  eventName?: string | null;
+  eventStage?: EventLifecycleStage | null;
 }
 
 export interface BadgesResponse {
   items: BadgeDTO[];
+}
+
+// --- Crossover events --------------------------------------------------
+
+export interface EventDTO {
+  slug: string;
+  name: string;
+  tagline: string;
+  description: string;
+  sponsorName: string | null;
+  themeSlug: string;
+  heroImageUrl: string | null;
+  cardImageUrl: string | null;
+  startsAt: string;
+  endsAt: string;
+  stage: EventLifecycleStage;
+}
+
+export interface EventsResponse {
+  events: EventDTO[];
+}
+
+export interface EventTierDTO {
+  tier: number;
+  pointsRequired: number;
+  rewardItemSlug: string;
+  claimed: boolean;
+}
+
+export interface EventProgressResponse {
+  eventSlug: string;
+  pointsEarnedDuringEvent: number;
+  stage: EventLifecycleStage;
+  tiers: EventTierDTO[];
 }
 
 // --- Daily challenges ----------------------------------------------------------

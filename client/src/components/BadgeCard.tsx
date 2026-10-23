@@ -15,9 +15,14 @@ export function BadgeCard({ badge }: BadgeCardProps) {
       transition={{ type: "spring", stiffness: 300, damping: 20 }}
       whileHover={{ ...HOVER_LIFT, transition: SPRING_HOVER }}
     >
-      <span className="badge-card__icon" aria-hidden="true">
-        {badge.icon}
-      </span>
+      {badge.imageUrl ? (
+        <img src={badge.imageUrl} alt={badge.name} className="badge-card__image" loading="lazy" />
+      ) : (
+        <span className="badge-card__icon" aria-hidden="true">
+          {badge.icon}
+        </span>
+      )}
+      {badge.eventName && <span className="badge-card__event-chip">🎀 {badge.eventName}</span>}
       <p className="badge-card__name">{badge.name}</p>
       <p className="badge-card__description">{badge.description}</p>
     </motion.div>

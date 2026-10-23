@@ -13,6 +13,8 @@ import { useCreateCustomTask, useUpdateCustomTaskInstanceStatus } from "../hooks
 import { useChallenges, useUpdateChallengeStatus } from "../hooks/useChallenges";
 import { useTips } from "../hooks/useTips";
 import { useSharedRewardToast } from "../hooks/RewardToastContext";
+import { useEvents } from "../hooks/useEvents";
+import { EventBanner } from "../components/EventBanner";
 import { formatFriendlyDate } from "../utils/time";
 import type { BadgeDTO, CreateCustomTaskPayload, TaskStatus } from "../types";
 
@@ -21,6 +23,7 @@ export default function TodayPage() {
   const { data, isLoading, isError, error, refetch } = useTodayPlan();
   const { data: challengesData } = useChallenges();
   const { data: tipsData } = useTips();
+  const { data: eventsData } = useEvents();
   const updateTask = useUpdateTaskStatus();
   const updateCustomInstance = useUpdateCustomTaskInstanceStatus();
   const updateChallenge = useUpdateChallengeStatus();
@@ -154,6 +157,8 @@ export default function TodayPage() {
 
   return (
     <div className="page page--today">
+      {eventsData?.events.map((event) => <EventBanner key={event.slug} event={event} />)}
+
       {tipsData && tipsData.tips.length > 0 && <TipsCarousel tips={tipsData.tips} />}
 
       <header className="today-header glass-glow">

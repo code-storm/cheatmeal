@@ -56,7 +56,18 @@ export function RewardCard({
         {item.rarity}
       </span>
 
-      {item.category === "SKIN" ? (
+      {item.eventName && (
+        <span className="reward-card__event-chip">🎀 {item.eventName}</span>
+      )}
+
+      {item.imageUrl ? (
+        <img
+          src={item.imageUrl}
+          alt={item.name}
+          className="reward-card__image"
+          loading="lazy"
+        />
+      ) : item.category === "SKIN" ? (
         <SkinSwatch slug={item.slug} icon={item.icon} />
       ) : (
         <span className="reward-card__icon" aria-hidden="true">
@@ -74,7 +85,15 @@ export function RewardCard({
         <span className="reward-card__limited">⏳ Limited to your trimester</span>
       )}
 
-      {expiredForUser && <span className="reward-card__expired-label">No longer available for you</span>}
+      {item.eventStage === "ENDING_SOON" && !item.unlocked && (
+        <span className="reward-card__limited reward-card__limited--urgent">⏰ Event ending soon</span>
+      )}
+
+      {expiredForUser && (
+        <span className="reward-card__expired-label">
+          {item.eventSlug ? "This event has ended" : "No longer available for you"}
+        </span>
+      )}
 
       <p className="reward-card__cost">
         {item.featured && !item.unlocked ? (

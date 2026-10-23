@@ -14,13 +14,14 @@ model User {
   passwordHash String
   createdAt    DateTime @default(now())
 
-  profile      PregnancyProfile?
-  dailyPlans   DailyPlan[]
-  mealServings MealServingLog[]
-  customTasks  CustomTask[]
-  userRewards  UserReward[]
+  profile                 PregnancyProfile?
+  dailyPlans              DailyPlan[]
+  mealServings            MealServingLog[]
+  customTasks             CustomTask[]
+  userRewards             UserReward[]
   userBadges              UserBadge[]
   dailyChallengeInstances DailyChallengeInstance[]
+  eventProgress           EventProgress[]
 }
 
 model PregnancyProfile {
@@ -47,9 +48,9 @@ model PregnancyProfile {
   activeAvatarSlug  String?
 
   currentStreak      Int     @default(0)
-  longestStreak       Int     @default(0)
-  lastStreakDate      String?
-  lastLoginBonusDate  String?
+  longestStreak      Int     @default(0)
+  lastStreakDate     String?
+  lastLoginBonusDate String?
 
   // Streak forgiveness: a monthly passive grant that auto-bridges exactly
   // one missed day, so a single bad day doesn't reset currentStreak to 1.
@@ -68,13 +69,13 @@ model PregnancyProfile {
 // layer via union types exported from src/lib/enums.ts.
 
 model TaskTemplate {
-  id          String    @id @default(cuid())
-  slug        String    @unique
-  type        String
-  mealSlot    String?
-  defaultTime String
-  name        String
-  description String
+  id           String  @id @default(cuid())
+  slug         String  @unique
+  type         String
+  mealSlot     String?
+  defaultTime  String
+  name         String
+  description  String
   instructions String?
 
   minWeek Int
@@ -82,8 +83,8 @@ model TaskTemplate {
 
   nutrientTags    String
   rotationPoolKey String?
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
 
   dietType String @default("VEGETARIAN")
   calories Int    @default(0)
@@ -118,12 +119,12 @@ model ActivityAvoidRule {
 }
 
 model DailyPlan {
-  id        String   @id @default(cuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id])
-  date      String
+  id                        String   @id @default(cuid())
+  userId                    String
+  user                      User     @relation(fields: [userId], references: [id])
+  date                      String
   pregnancyWeekAtGeneration Int
-  generatedAt DateTime @default(now())
+  generatedAt               DateTime @default(now())
 
   tasks               DailyTask[]
   customTaskInstances CustomTaskInstance[]
@@ -139,8 +140,8 @@ model DailyTask {
   taskTemplate   TaskTemplate @relation(fields: [taskTemplateId], references: [id])
 
   scheduledTime String
-  status      String     @default("PENDING")
-  completedAt DateTime?
+  status        String    @default("PENDING")
+  completedAt   DateTime?
 
   calories Int   @default(0)
   proteinG Float @default(0)
@@ -192,6 +193,7 @@ model RewardItem {
   icon        String // emoji, for display
   powerKey    String? // only for category=POWER: "TOMORROW_PREVIEW" | "FRESH_PICK"
   isActive    Boolean @default(true)
+  imageUrl    String? // real illustrated art, overrides icon/CSS swatch when present
 
   // Pregnancy-week-scoped scarcity (both nullable; null = always
   // purchasable, true for every item today). Compared against each user's
@@ -200,6 +202,14 @@ model RewardItem {
   // ability to newly purchase it is gated by this window.
   availableFromWeek  Int?
   availableUntilWeek Int?
+
+  // Crossover-event scoping (nullable - most items belong to no event).
+  // A shared, wall-clock-based scarcity axis, independent of the
+  // pregnancy-week one above - see events.service.ts. Ownership, once
+  // granted, never expires here either; only new-purchase eligibility is
+  // gated by the event's lifecycle stage.
+  eventId String?
+  event   Event?  @relation(fields: [eventId], references: [id])
 
   unlocks UserReward[]
 }
@@ -223,6 +233,11 @@ model Badge {
   icon        String
   criteriaKey String
   isActive    Boolean @default(true)
+  imageUrl    String?
+
+  // See RewardItem.eventId - same nullable event-scoping, same semantics.
+  eventId String?
+  event   Event?  @relation(fields: [eventId], references: [id])
 
   unlocks UserBadge[]
 }
@@ -252,18 +267,18 @@ model DailyChallengeTemplate {
 }
 
 model DailyChallengeInstance {
-  id           String                 @id @default(cuid())
-  userId       String
-  user         User                   @relation(fields: [userId], references: [id])
-  templateId   String
-  template     DailyChallengeTemplate @relation(fields: [templateId], references: [id])
-  date         String
+  id         String                 @id @default(cuid())
+  userId     String
+  user       User                   @relation(fields: [userId], references: [id])
+  templateId String
+  template   DailyChallengeTemplate @relation(fields: [templateId], references: [id])
+  date       String
 
-  difficulty   String
-  title        String
-  description  String
-  proofType    String
-  bonusPoints  Int
+  difficulty  String
+  title       String
+  description String
+  proofType   String
+  bonusPoints Int
 
   status       String    @default("PENDING")
   proofCaption String?
@@ -272,12 +287,69 @@ model DailyChallengeInstance {
   @@unique([userId, date, difficulty])
 }
 
+// Crossover/sponsored content drops ("CheatMeal x <sponsor>") - a shared,
+// wall-clock-based scarcity axis (startsAt/endsAt), deliberately separate
+// from RewardItem's pregnancy-week-relative scarcity (availableFromWeek/
+// availableUntilWeek): every user sees the same event window at the same
+// real time, which is what makes it feel like a live event rather than a
+// personal milestone. isActive is a manual kill-switch only (e.g. a
+// content issue found after launch) - it is NOT how lifecycle stage
+// (upcoming/active/ending-soon/retired) is determined; that is always
+// computed fresh from (now, startsAt, endsAt, isActive) in
+// events.service.ts, never persisted, so there is no second source of
+// truth that can drift from the real dates.
+model Event {
+  id          String  @id @default(cuid())
+  slug        String  @unique
+  name        String
+  tagline     String
+  description String
+  sponsorName String?
+  themeSlug   String // CSS/asset namespace key, e.g. "tokidoki"
+
+  heroImageUrl String?
+  cardImageUrl String?
+
+  startsAt DateTime
+  endsAt   DateTime
+  isActive Boolean  @default(true)
+
+  createdAt DateTime @default(now())
+
+  rewardItems   RewardItem[]
+  badges        Badge[]
+  eventProgress EventProgress[]
+
+  @@index([startsAt, endsAt])
+}
+
+// Per-user, per-event progression ("battle pass" style tier track) -
+// pointsEarnedDuringEvent is a SEPARATE counter from
+// PregnancyProfile.totalPointsEarned, credited alongside it only while
+// this event is active, so a long-time user's lifetime points don't
+// instantly max a brand-new event's tier ladder. claimedTiers is a
+// comma-separated list of already-granted tier numbers, so a threshold
+// crossing can never grant the same tier's reward twice.
+model EventProgress {
+  id      String @id @default(cuid())
+  userId  String
+  user    User   @relation(fields: [userId], references: [id])
+  eventId String
+  event   Event  @relation(fields: [eventId], references: [id])
+
+  pointsEarnedDuringEvent Int    @default(0)
+  tierReached             Int    @default(0)
+  claimedTiers            String @default("")
+
+  @@unique([userId, eventId])
+}
+
 model MealServingLog {
   id              String       @id @default(cuid())
   userId          String
   user            User         @relation(fields: [userId], references: [id])
   taskTemplateId  String
-  taskTemplate   TaskTemplate @relation(fields: [taskTemplateId], references: [id])
+  taskTemplate    TaskTemplate @relation(fields: [taskTemplateId], references: [id])
   rotationPoolKey String
   servedDate      String
 

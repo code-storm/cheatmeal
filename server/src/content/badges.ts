@@ -4,6 +4,15 @@ export interface BadgeSeed {
   description: string;
   icon: string;
   criteriaKey: string;
+  // Real illustrated art, overrides the emoji icon on the client when
+  // present. Omitted on every evergreen badge today.
+  imageUrl?: string;
+  // Crossover-event scoping - see RewardItemSeed.eventSlug in
+  // content/rewards.ts for the full explanation. For criteriaKey ===
+  // "EVENT_SET_COMPLETE", this field is also the implicit parameter: the
+  // badge's own eventId tells checkAndAwardBadges which event's item set
+  // must be fully owned.
+  eventSlug?: string;
 }
 
 export const badges: BadgeSeed[] = [
@@ -101,5 +110,24 @@ export const badges: BadgeSeed[] = [
     description: "Reached week 37 - full term.",
     icon: "🌕",
     criteriaKey: "FULL_TERM_REACHED",
+  },
+  // --- CheatMeal x Tokidoki (crossover event) -------------------------
+  {
+    slug: "tokidoki-debut",
+    name: "Tokidoki Debut",
+    description: "Unlocked your first item from the CheatMeal x Tokidoki drop.",
+    icon: "🎉",
+    criteriaKey: "EVENT_FIRST_ITEM",
+    imageUrl: "/events/tokidoki/badge-debut.png",
+    eventSlug: "cheatmeal-x-tokidoki",
+  },
+  {
+    slug: "tokidoki-completionist",
+    name: "Tokidoki Completionist",
+    description: "Collected every item from the CheatMeal x Tokidoki drop.",
+    icon: "🏅",
+    criteriaKey: "EVENT_SET_COMPLETE",
+    imageUrl: "/events/tokidoki/badge-completionist.png",
+    eventSlug: "cheatmeal-x-tokidoki",
   },
 ];

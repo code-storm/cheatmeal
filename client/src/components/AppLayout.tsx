@@ -24,11 +24,17 @@ const NAV_ITEMS = [
   { to: "/profile", label: "Profile", icon: "👤" },
 ];
 
+// TODO(polish phase): once AppLayout has a reason to fetch /api/rewards
+// anyway, replace this with the already-fetched item's icon/imageUrl
+// instead of a parallel hardcoded map - deferred for now since adding a
+// new useRewards() call here would mean every page load fetches rewards,
+// not just Wardrobe/Rewards, undoing the per-page-load latency work.
 const AVATAR_ICON_BY_SLUG: Record<string, string> = {
   "avatar-blossom": "🌸",
   "avatar-moon": "🌙",
   "avatar-sprout": "🌱",
   "avatar-rainbow": "🌈",
+  "avatar-tokidoki-mascot": "🌵",
 };
 
 export function AppLayout() {
@@ -179,6 +185,7 @@ export function AppLayout() {
           <feComposite in="displaced" in2="specularClipped" operator="arithmetic" k1={0} k2={1} k3={1} k4={0} />
         </filter>
       </svg>
+      <div className="ambient-bg-image" aria-hidden="true" />
       <div className="ambient-fx" aria-hidden="true" />
       <RewardToast toast={toast} />
       <AnimatePresence>
