@@ -61,6 +61,14 @@
   --glass-blur-light: 18px;
   --glass-saturate: 1.6;
 
+  /* Light-mode text (dark ink) needs a LIGHT halo to read against busy
+     art - see --skin-text-shadow on the three Tokidoki skins and the
+     global `body` text-shadow rule below. Unset (`none`) for every
+     evergreen skin - this is a text-shadow, not a background, so it
+     adds zero visual surface/box of any kind; it only activates at all
+     when a skin explicitly opts in via --skin-text-shadow. */
+  --text-halo: 0 1px 3px rgba(255, 255, 255, 0.9), 0 0px 10px rgba(255, 255, 255, 0.5);
+
   --shadow-soft: 0 4px 24px rgba(20, 20, 30, 0.07), 0 1px 2px rgba(20, 20, 30, 0.04);
   --shadow-raised: 0 16px 48px rgba(20, 20, 30, 0.12), 0 2px 8px rgba(20, 20, 30, 0.06);
   --shadow-glow: 0 0 0 1px var(--glass-border), 0 8px 28px color-mix(in srgb, var(--accent) 35%, transparent);
@@ -133,6 +141,10 @@
   --glass-blur: 24px;
   --glass-blur-light: 16px;
   --glass-saturate: 1.3;
+
+  /* Dark-mode text (light ink) needs a DARK halo instead - inverse of
+     the light-mode --text-halo above, same consumer. */
+  --text-halo: 0 1px 3px rgba(0, 0, 0, 0.8), 0 0px 10px rgba(0, 0, 0, 0.5);
 
   --shadow-soft: 0 4px 24px rgba(0, 0, 0, 0.35), 0 1px 2px rgba(0, 0, 0, 0.25);
   --shadow-raised: 0 16px 48px rgba(0, 0, 0, 0.5), 0 2px 8px rgba(0, 0, 0, 0.3);
@@ -299,7 +311,7 @@ body {
   z-index: -3;
   pointer-events: none;
   background-image: var(--skin-bg-image, none);
-  /* Full-scene art (skin-cactus-bg.webp) wants cover/no-repeat (the
+  /* Full-scene art (skin-ciaociao-bg.webp) wants cover/no-repeat (the
      default); a single-character motif crop (ambient-*-motif.webp)
      instead sets --skin-bg-size/--skin-bg-repeat to tile at its own
      natural size, same pattern every evergreen skin's own .ambient-fx
@@ -451,25 +463,18 @@ input {
   gap: 28px;
 }
 
-/* Unlike .reward-card/.badge-card/.app-header__inner, .page-header had
-   no backing surface at all - just text straight on the page
-   background. Harmless against the soft gradients evergreen skins use,
-   but illegible against real photographic event art (reported: the
-   "Rewards" title and "Skins" heading were unreadable against the
-   Tokidoki Cactus Friends background). --glass-bg-opaque defaults to
-   `transparent` here (every evergreen skin never sets it, so this is a
-   complete no-op - no padding/background/blur change for them); event
-   skins get a near-opaque backing plate behind just this text block,
-   so the art stays fully visible everywhere EXCEPT directly behind it,
-   rather than scrimming the whole page. */
-body[data-theme="skin-tokidoki-cactus"] .page-header,
-body[data-theme="skin-tokidoki-pastel"] .page-header,
-body[data-theme="skin-tokidoki-neon"] .page-header {
-  background: color-mix(in srgb, var(--glass-tint) 8%, var(--glass-bg-opaque));
-  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
-  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
-  border-radius: var(--radius-lg);
-  padding: 16px 20px;
+/* --skin-text-shadow is unset (-> `none`) for every evergreen skin -
+   a complete no-op for them. Only the three Tokidoki skins set it (to
+   --text-halo, defined per color-scheme above), and only .page-header
+   and .rewards-section__heading consume it: these two are the only
+   text on the page with NO backing surface of their own (every card,
+   pill, and button already sits on its own opaque/blurred panel and
+   doesn't need help). A soft halo directly on this bare text keeps it
+   readable against real photographic art without adding any
+   background/box - see the --text-halo definitions for why a
+   backing-plate approach was tried and reverted in favor of this. */
+.page-header {
+  text-shadow: var(--skin-text-shadow, none);
 }
 
 .page-header h1 {
@@ -1487,9 +1492,26 @@ body[data-theme="skin-tokidoki-neon"] .page-header {
 .event-banner__image {
   width: 56px;
   height: 56px;
-  object-fit: cover;
+  background-size: cover;
+  background-position: center;
   border-radius: var(--radius-md);
   flex-shrink: 0;
+}
+
+/* The event's own card/collage art (event.cardImageUrl) is too dense to
+   read clearly once crushed into this 56px circle - the clean logo
+   mark reads far better at this size. logo.jpg/logo_dark.jpg are both
+   solid-background JPEGs matching each color-scheme's own page
+   background (white/black respectively), so no transparency handling
+   is needed - just swap which file paints behind the dark-mode
+   selector, same :root[data-color-scheme="dark"] pattern every other
+   skin-aware image in this file already uses. */
+.event-banner__image--tokidoki {
+  background-image: url("/events/tokidoki/logo.jpg");
+}
+
+:root[data-color-scheme="dark"] .event-banner__image--tokidoki {
+  background-image: url("/events/tokidoki/logo_dark.jpg");
 }
 
 .event-banner__content {
@@ -1584,19 +1606,7 @@ body[data-theme="skin-tokidoki-neon"] .page-header {
   font-family: var(--font-heading);
   font-size: 1.2rem;
   color: var(--color-ink);
-  display: inline-block;
-}
-
-/* Same bare-text-on-busy-art problem as .page-header, same fix: a
-   backing plate behind just this heading's text, event skins only. */
-body[data-theme="skin-tokidoki-cactus"] .rewards-section__heading,
-body[data-theme="skin-tokidoki-pastel"] .rewards-section__heading,
-body[data-theme="skin-tokidoki-neon"] .rewards-section__heading {
-  background: color-mix(in srgb, var(--glass-tint) 8%, var(--glass-bg-opaque));
-  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
-  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
-  border-radius: var(--radius-sm);
-  padding: 4px 10px;
+  text-shadow: var(--skin-text-shadow, none);
 }
 
 .rewards-grid {
@@ -1619,14 +1629,7 @@ body[data-theme="skin-tokidoki-neon"] .rewards-section__heading {
   align-items: center;
   gap: 6px;
   text-align: center;
-  /* --glass-bg-opaque (set only by event skins, see their body[data-theme]
-     blocks) swaps in a much higher-alpha surface than the usual
-     translucent glass-bg, so text stays legible against ANY background
-     art without needing to dim/blur that art - see the .ambient-bg-image
-     comment for why the art itself must stay close to full clarity for
-     a sponsored collab. Falls back to the normal --glass-bg for every
-     evergreen skin, unchanged. */
-  background: color-mix(in srgb, var(--glass-tint) 12%, var(--glass-bg-opaque, var(--glass-bg)));
+  background: color-mix(in srgb, var(--glass-tint) 12%, var(--glass-bg));
   backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
   -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
   border: 1px solid var(--glass-border);
@@ -1676,7 +1679,7 @@ body[data-theme="skin-tokidoki-neon"] .rewards-section__heading {
   align-items: center;
   gap: 6px;
   text-align: center;
-  background: color-mix(in srgb, var(--glass-tint) 12%, var(--glass-bg-opaque, var(--glass-bg)));
+  background: color-mix(in srgb, var(--glass-tint) 12%, var(--glass-bg));
   backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
   -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
   border: 1px solid var(--glass-border);
@@ -2305,26 +2308,34 @@ body[data-theme="sunset-ember"] {
    own dedicated background file (not the shared sprite sheet) since
    these three are full-canvas art, not single-character crops. */
 
-/* --glass-bg-opaque (consumed by .reward-card/.badge-card) swaps in an
-   85%-opaque version of the theme's own --color-paper for these three
-   skins only, so card text stays legible against ANY background art,
-   busy or not, without needing to dim or blur the art itself - see the
-   .ambient-bg-image comment above for why that's the wrong trade for
-   sponsored content. color-mix keeps this correctly light in light
-   mode and dark in dark mode automatically, same as every other token
-   here. Evergreen skins never set this, so they keep their original
-   ~12%-tint translucent glass look untouched. */
+/* Legibility against these three skins' real art is handled by
+   --skin-text-shadow (set below, consumed by the global `body` text-
+   shadow rule near the top of this file) rather than by opaque card/
+   heading backgrounds - a text-hugging halo keeps every surface's
+   normal translucent glass look completely unchanged across all
+   skins, instead of some skins rendering opaque boxes/plates that
+   break the consistent glass aesthetic. --text-halo is defined once
+   per color-scheme (light vs dark), not per skin - it has to contrast
+   with the TEXT color, which flips with color-scheme, not with which
+   skin happens to be active. */
 
+/* Retheme note: this skin was originally "Tokidoki Cactus Friends"
+   (green desert palette, skin-cactus-bg.webp) - retired in favor of
+   this pink "Ciao Ciao" theme, a cleaner wallpaper-style image with a
+   single clear focal character and open negative space, which works
+   better as a full-page background than the cactus group shot did.
+   Slug (skin-tokidoki-cactus) kept stable - see the content/rewards.ts
+   comment on this item. */
 body[data-theme="skin-tokidoki-cactus"] {
-  --accent: #5a9c4a;
-  --accent-dark: #3f7a33;
-  --accent-light: #e2f2da;
-  --aurora-stop-1: #f5e6c8;
-  --aurora-stop-2: #eef2da;
-  --aurora-stop-3: #d9ecd4;
-  --glass-tint: #8fd27a;
-  --skin-bg-image: url("/events/tokidoki/skin-cactus-bg.webp");
-  --glass-bg-opaque: color-mix(in srgb, var(--color-paper) 85%, transparent);
+  --accent: #e0558a;
+  --accent-dark: #b83d6c;
+  --accent-light: #fbdde9;
+  --aurora-stop-1: #fbdde9;
+  --aurora-stop-2: #fde9f0;
+  --aurora-stop-3: #f6d4e2;
+  --glass-tint: #f4a0c0;
+  --skin-bg-image: url("/events/tokidoki/skin-ciaociao-bg.webp");
+  --skin-text-shadow: var(--text-halo);
 }
 
 body[data-theme="skin-tokidoki-pastel"] {
@@ -2345,7 +2356,7 @@ body[data-theme="skin-tokidoki-pastel"] {
   --skin-bg-image: url("/events/tokidoki/ambient-pastel-motif.webp");
   --skin-bg-size: 340px 320px;
   --skin-bg-repeat: repeat;
-  --glass-bg-opaque: color-mix(in srgb, var(--color-paper) 85%, transparent);
+  --skin-text-shadow: var(--text-halo);
 }
 
 body[data-theme="skin-tokidoki-neon"] {
@@ -2359,7 +2370,7 @@ body[data-theme="skin-tokidoki-neon"] {
   --skin-bg-image: url("/events/tokidoki/ambient-neon-motif.webp");
   --skin-bg-size: 320px 360px;
   --skin-bg-repeat: repeat;
-  --glass-bg-opaque: color-mix(in srgb, var(--color-paper) 85%, transparent);
+  --skin-text-shadow: var(--text-halo);
 }
 
 /* ---- Dark overrides ---- */
@@ -2445,13 +2456,13 @@ body[data-theme="skin-tokidoki-neon"] {
 }
 
 :root[data-color-scheme="dark"] body[data-theme="skin-tokidoki-cactus"] {
-  --accent: #8fd27a;
-  --accent-dark: #aee89c;
-  --accent-light: #243a1e;
-  --aurora-stop-1: #1c2416;
-  --aurora-stop-2: #222c1a;
-  --aurora-stop-3: #18221a;
-  --glass-tint: #6fb85a;
+  --accent: #f08cb4;
+  --accent-dark: #f7b3d0;
+  --accent-light: #3a2430;
+  --aurora-stop-1: #2a1822;
+  --aurora-stop-2: #301d28;
+  --aurora-stop-3: #24161e;
+  --glass-tint: #e879a8;
 }
 
 :root[data-color-scheme="dark"] body[data-theme="skin-tokidoki-pastel"] {

@@ -27,9 +27,7 @@ export function EventBanner({ event }: EventBannerProps) {
       to={`/events/${event.slug}`}
       className={`event-banner glass-glow ${event.stage === "ENDING_SOON" ? "event-banner--urgent" : ""}`}
     >
-      {event.cardImageUrl && (
-        <img src={event.cardImageUrl} alt="" className="event-banner__image" aria-hidden="true" loading="lazy" />
-      )}
+      <span className={`event-banner__image event-banner__image--${event.themeSlug}`} aria-hidden="true" />
       <div className="event-banner__content">
         <span className="event-banner__name">{event.name}</span>
         <span className="event-banner__tagline">{event.tagline}</span>

@@ -174,14 +174,19 @@ export const rewardItems: RewardItemSeed[] = [
     eventSlug: "cheatmeal-x-tokidoki",
   },
   {
+    // Slug kept stable across the Cactus Friends -> Ciao Ciao retheme
+    // (matches the pattern already used elsewhere in this file, e.g.
+    // the original 3 evergreen skins keeping their slugs through
+    // earlier renames) so no already-unlocked UserReward row is
+    // orphaned by a content-only change.
     slug: "skin-tokidoki-cactus",
-    name: "Tokidoki Cactus Friends",
-    description: "Warm desert tones with the whole Cactus Friends crew scattered across the screen.",
+    name: "Tokidoki Ciao Ciao",
+    description: "A soft pink diagonal-stripe pattern with Ciao Ciao and friends scattered across the screen.",
     category: "SKIN",
     rarity: "RARE",
     costPoints: 180,
-    icon: "🌵",
-    imageUrl: "/events/tokidoki/skin-cactus-bg.webp",
+    icon: "💗",
+    imageUrl: "/events/tokidoki/skin-ciaociao-bg.webp",
     eventSlug: "cheatmeal-x-tokidoki",
   },
   {
