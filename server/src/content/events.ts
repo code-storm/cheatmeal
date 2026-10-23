@@ -27,8 +27,13 @@ export const events: EventSeed[] = [
       "A limited-time collaboration bringing Tokidoki's signature pop-art characters into CheatMeal - exclusive skins, an avatar, and a completionist badge, available only while the drop is live.",
     sponsorName: "Tokidoki",
     themeSlug: "tokidoki",
-    heroImageUrl: "/events/tokidoki/hero.png",
-    cardImageUrl: "/events/tokidoki/card.png",
+    // The full sprite sheet (client/public/events/tokidoki/sprite.png) is
+    // used as-is for the hero/card banners - it's already a colorful,
+    // full-canvas collage, unlike the per-item images below which crop
+    // one character out of it into a square thumbnail (see
+    // utils/spriteImage.ts on the client).
+    heroImageUrl: "/events/tokidoki/sprite.png",
+    cardImageUrl: "/events/tokidoki/sprite.png",
     startsAt: "2026-11-15T00:00:00Z",
     endsAt: "2026-12-15T00:00:00Z",
     // Each tier grants a RewardItem (via UserReward) on crossing its

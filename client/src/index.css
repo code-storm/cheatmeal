@@ -2240,7 +2240,7 @@ body[data-theme="skin-tokidoki-pastel"] {
   --aurora-stop-2: #fde3f0;
   --aurora-stop-3: #dcecf8;
   --glass-tint: #f4b8d8;
-  --skin-bg-image: url("/events/tokidoki/skin-pastel.png");
+  --skin-bg-image: url("/events/tokidoki/sprite.png");
 }
 
 body[data-theme="skin-tokidoki-neon"] {
@@ -2251,7 +2251,7 @@ body[data-theme="skin-tokidoki-neon"] {
   --aurora-stop-2: #1f1430;
   --aurora-stop-3: #3a1f4a;
   --glass-tint: #ff3d7f;
-  --skin-bg-image: url("/events/tokidoki/skin-neon.png");
+  --skin-bg-image: url("/events/tokidoki/sprite.png");
 }
 
 /* ---- Dark overrides ---- */

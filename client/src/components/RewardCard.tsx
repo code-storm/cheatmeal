@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import type { RewardItemDTO } from "../types";
 import { HOVER_LIFT, SPRING_HOVER, SPRING_TAP, TAP_SCALE } from "../utils/motion";
 import { SkinSwatch } from "./SkinSwatch";
+import { SpriteImage } from "./SpriteImage";
 
 interface RewardCardProps {
   item: RewardItemDTO;
@@ -61,12 +62,7 @@ export function RewardCard({
       )}
 
       {item.imageUrl ? (
-        <img
-          src={item.imageUrl}
-          alt={item.name}
-          className="reward-card__image"
-          loading="lazy"
-        />
+        <SpriteImage url={item.imageUrl} alt={item.name} className="reward-card__image" size={96} />
       ) : item.category === "SKIN" ? (
         <SkinSwatch slug={item.slug} icon={item.icon} />
       ) : (

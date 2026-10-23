@@ -162,48 +162,54 @@ export const rewardItems: RewardItemSeed[] = [
   // badge-tokidoki-completionist's underlying badge) are also granted
   // automatically on crossing the event's points thresholds - see
   // content/events.ts's `tiers` and points.service.ts.
+  // imageUrl values below point at one cropped region of the single
+  // sprite sheet (client/public/events/tokidoki/sprite.png), encoded as
+  // query params the client decodes via utils/spriteImage.ts - see that
+  // file's TOKIDOKI_SPRITE_REGIONS for the named region each crop box
+  // corresponds to. No schema change was needed since imageUrl stays a
+  // plain String column either way.
   {
     slug: "avatar-tokidoki-mascot",
     name: "Tokidoki Mascot",
-    description: "A pop-art cactus friend, straight from the Tokidoki universe.",
+    description: "A pop-art dino friend, straight from the Tokidoki universe.",
     category: "AVATAR",
     rarity: "COMMON",
     costPoints: 80,
-    icon: "🌵",
-    imageUrl: "/events/tokidoki/avatar-mascot.png",
+    icon: "🦕",
+    imageUrl: "/events/tokidoki/sprite.png?x=10&y=10&w=185&h=195", // dinoGirl
     eventSlug: "cheatmeal-x-tokidoki",
   },
   {
     slug: "skin-tokidoki-cactus",
-    name: "Tokidoki Cactus Garden",
-    description: "Warm desert tones with little pop-art cactus friends scattered across the screen.",
+    name: "Tokidoki Star Pop",
+    description: "Warm pop-art tones with a skull-and-stars friend drifting across the screen.",
     category: "SKIN",
     rarity: "RARE",
     costPoints: 180,
-    icon: "🌵",
-    imageUrl: "/events/tokidoki/skin-cactus.png",
+    icon: "⭐",
+    imageUrl: "/events/tokidoki/sprite.png?x=610&y=45&w=105&h=125", // skullStar
     eventSlug: "cheatmeal-x-tokidoki",
   },
   {
     slug: "skin-tokidoki-pastel",
     name: "Tokidoki Pastel Dream",
-    description: "Soft pastel pop-art clouds and stars drifting across the screen.",
+    description: "Soft pastel pop-art clouds and a rainbow drifting across the screen.",
     category: "SKIN",
     rarity: "EPIC",
     costPoints: 260,
     icon: "☁️",
-    imageUrl: "/events/tokidoki/skin-pastel.png",
+    imageUrl: "/events/tokidoki/sprite.png?x=745&y=170&w=135&h=105", // rainbowClouds
     eventSlug: "cheatmeal-x-tokidoki",
   },
   {
     slug: "skin-tokidoki-neon",
     name: "Tokidoki Neon Pop",
-    description: "Saturated neon pop-art, with bold outlined characters drifting by.",
+    description: "Saturated pop-art, with a bold black skull-and-star drifting by.",
     category: "SKIN",
     rarity: "LEGENDARY",
     costPoints: 420,
     icon: "🎆",
-    imageUrl: "/events/tokidoki/skin-neon.png",
+    imageUrl: "/events/tokidoki/sprite.png?x=1185&y=410&w=110&h=140", // blackSkullStar
     eventSlug: "cheatmeal-x-tokidoki",
   },
   {
@@ -215,7 +221,7 @@ export const rewardItems: RewardItemSeed[] = [
     costPoints: 220,
     icon: "🎲",
     powerKey: "FRESH_PICK",
-    imageUrl: "/events/tokidoki/power-fresh-pick.png",
+    imageUrl: "/events/tokidoki/sprite.png?x=1295&y=570&w=110&h=125", // diamondCrystal
     eventSlug: "cheatmeal-x-tokidoki",
   },
 

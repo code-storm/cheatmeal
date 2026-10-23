@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import type { BadgeDTO } from "../types";
 import { HOVER_LIFT, SPRING_HOVER } from "../utils/motion";
+import { SpriteImage } from "./SpriteImage";
 
 interface BadgeCardProps {
   badge: BadgeDTO;
@@ -16,7 +17,7 @@ export function BadgeCard({ badge }: BadgeCardProps) {
       whileHover={{ ...HOVER_LIFT, transition: SPRING_HOVER }}
     >
       {badge.imageUrl ? (
-        <img src={badge.imageUrl} alt={badge.name} className="badge-card__image" loading="lazy" />
+        <SpriteImage url={badge.imageUrl} alt={badge.name} className="badge-card__image" size={72} />
       ) : (
         <span className="badge-card__icon" aria-hidden="true">
           {badge.icon}
