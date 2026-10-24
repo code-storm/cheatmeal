@@ -1,4 +1,4 @@
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "../src/lib/prisma";
 import { hashPassword } from "../src/services/auth.service";
 
 // Standalone from seed.ts on purpose: provisioning/resetting an admin
@@ -7,8 +7,12 @@ import { hashPassword } from "../src/services/auth.service";
 // in the environment - idempotent (upsert by email), so re-running this
 // with a new ADMIN_SEED_PASSWORD against an existing email doubles as a
 // password-reset tool for that admin.
-
-const prisma = new PrismaClient();
+//
+// Uses the app's own libSQL-adapter-aware `prisma` export (not a bare
+// `new PrismaClient()`) so this script actually honors
+// TURSO_DATABASE_URL/TURSO_AUTH_TOKEN when set - a bare client only ever
+// reads schema.prisma's plain `DATABASE_URL` datasource and would
+// silently write to the local dev.db file even with Turso env vars set.
 
 async function main() {
   const email = process.env.ADMIN_SEED_EMAIL;

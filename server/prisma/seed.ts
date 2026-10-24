@@ -1,4 +1,4 @@
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "../src/lib/prisma";
 import { meals } from "../src/content/meals";
 import { exercises } from "../src/content/exercises";
 import { habits } from "../src/content/habits";
@@ -8,7 +8,11 @@ import { badges } from "../src/content/badges";
 import { challengeTemplates } from "../src/content/challenges";
 import { events } from "../src/content/events";
 
-const prisma = new PrismaClient();
+// Uses the app's own libSQL-adapter-aware `prisma` export (not a bare
+// `new PrismaClient()`) so this script actually honors
+// TURSO_DATABASE_URL/TURSO_AUTH_TOKEN when set - a bare client only ever
+// reads schema.prisma's plain `DATABASE_URL` datasource and would
+// silently write to the local dev.db file even with Turso env vars set.
 
 async function main() {
   const allTaskTemplates = [...meals, ...exercises, ...habits];
