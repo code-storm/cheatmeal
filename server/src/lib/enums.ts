@@ -64,6 +64,9 @@ export function isCustomTaskRecurrence(value: unknown): value is CustomTaskRecur
 
 export const REWARD_CATEGORIES = ["SKIN", "AVATAR", "POWER"] as const;
 export type RewardCategory = (typeof REWARD_CATEGORIES)[number];
+export function isRewardCategory(value: unknown): value is RewardCategory {
+  return typeof value === "string" && (REWARD_CATEGORIES as readonly string[]).includes(value);
+}
 
 export const RARITIES = ["COMMON", "RARE", "EPIC", "LEGENDARY"] as const;
 export type Rarity = (typeof RARITIES)[number];
@@ -73,6 +76,9 @@ export function isRarity(value: unknown): value is Rarity {
 
 export const POWER_KEYS = ["TOMORROW_PREVIEW", "FRESH_PICK"] as const;
 export type PowerKey = (typeof POWER_KEYS)[number];
+export function isPowerKey(value: unknown): value is PowerKey {
+  return typeof value === "string" && (POWER_KEYS as readonly string[]).includes(value);
+}
 
 export const CHALLENGE_DIFFICULTIES = ["EASY", "MODERATE", "HARD"] as const;
 export type ChallengeDifficulty = (typeof CHALLENGE_DIFFICULTIES)[number];

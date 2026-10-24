@@ -1,14 +1,15 @@
 import type { Badge, RewardItem, TaskTemplate, FoodAvoidRule, ActivityAvoidRule, DailyChallengeTemplate } from "@prisma/client";
 import { prisma } from "./prisma";
 
-// In-process cache for content tables that are seeded once
-// (server/prisma/seed.ts) and have no runtime write path anywhere in
-// routes/ or services/ - confirmed by repo-wide grep. The only way their
-// contents change is a manual reseed, which is a deploy-time operation
-// (fresh process) in this app's actual workflow, so there's no staleness
-// risk and no invalidation logic is needed. Each getter lazily memoizes
-// a single in-flight Promise so concurrent requests during cold start
-// share one fetch instead of each issuing their own.
+// In-process cache for content tables seeded via server/prisma/seed.ts.
+// getActiveBadges()/getActiveRewardItems() now have exactly one runtime
+// write path - the admin portal's adminBadges.routes.ts/
+// adminRewards.routes.ts - which calls the matching invalidator below
+// after every mutation; every other getter in this file genuinely has no
+// write path anywhere (confirmed by repo-wide grep) and stays eternal, no
+// invalidation needed. Each getter lazily memoizes a single in-flight
+// Promise so concurrent requests during cold start share one fetch
+// instead of each issuing their own.
 //
 // These reads intentionally go through the top-level `prisma` client, not
 // a transaction's `tx` - correct specifically because this data never
@@ -34,10 +35,29 @@ export function getActiveBadges(): Promise<Badge[]> {
   return activeBadgesCache;
 }
 
+// Called after every admin Badge create/update (adminBadges.routes.ts) so
+// the next getActiveBadges() read reflects the write instead of serving
+// the pre-warmed (or previously-refetched) snapshot forever. Safe to call
+// from a plain route handler outside any transaction - it only clears the
+// in-memory reference; the next getter call issues a fresh top-level
+// `prisma` query, same as the very first warm-up call did, so this can
+// never recreate the cold-cache-inside-transaction deadlock described
+// above (that hazard is specifically about a cache's FIRST-EVER read
+// happening inside an open $transaction - this is neither).
+export function invalidateActiveBadgesCache(): void {
+  activeBadgesCache = null;
+}
+
 let activeRewardItemsCache: Promise<RewardItem[]> | null = null;
 export function getActiveRewardItems(): Promise<RewardItem[]> {
   activeRewardItemsCache ??= prisma.rewardItem.findMany({ where: { isActive: true } });
   return activeRewardItemsCache;
+}
+
+// See invalidateActiveBadgesCache() above - same rationale, called after
+// every admin RewardItem create/update (adminRewards.routes.ts).
+export function invalidateActiveRewardItemsCache(): void {
+  activeRewardItemsCache = null;
 }
 
 let activeTaskTemplatesCache: Promise<TaskTemplate[]> | null = null;

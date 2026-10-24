@@ -24,6 +24,19 @@ model User {
   eventProgress           EventProgress[]
 }
 
+// Fully separate from User by design - no FK relation, no shared auth code
+// path. The admin portal's own JWT auth (adminAuth.service.ts) signs/
+// verifies tokens with a distinct secret (ADMIN_JWT_SECRET) and payload
+// shape ({ adminId }, not { userId }), so a regular user's token can never
+// be mistaken for an admin's. Rows here are created only by
+// prisma/seedAdmin.ts - there is no signup endpoint.
+model AdminUser {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+}
+
 model PregnancyProfile {
   id     String @id @default(cuid())
   userId String @unique
@@ -211,7 +224,8 @@ model RewardItem {
   eventId String?
   event   Event?  @relation(fields: [eventId], references: [id])
 
-  unlocks UserReward[]
+  unlocks    UserReward[]
+  tierGrants EventTier[]
 }
 
 model UserReward {
@@ -319,8 +333,30 @@ model Event {
   rewardItems   RewardItem[]
   badges        Badge[]
   eventProgress EventProgress[]
+  eventTiers    EventTier[]
 
   @@index([startsAt, endsAt])
+}
+
+// Persisted tier ladder for an event's "battle pass" progression - exists
+// alongside (not replacing) the static EventTierSeed[] in
+// content/events.ts: the originally-seeded event (cheatmeal-x-tokidoki)
+// keeps reading its ladder from that static array forever, while any event
+// created later through the admin portal has no seed-file entry at all and
+// so reads its ladder from here instead. points.service.ts's
+// creditEventProgress and GET /events/:slug/progress both check the
+// static array first, falling back to this table only when no static
+// entry exists for that event - never both at once for the same event.
+model EventTier {
+  id             String     @id @default(cuid())
+  eventId        String
+  event          Event      @relation(fields: [eventId], references: [id])
+  tier           Int
+  pointsRequired Int
+  rewardItemId   String
+  rewardItem     RewardItem @relation(fields: [rewardItemId], references: [id])
+
+  @@unique([eventId, tier])
 }
 
 // Per-user, per-event progression ("battle pass" style tier track) -

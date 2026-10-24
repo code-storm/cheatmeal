@@ -2,8 +2,7 @@ import { Router } from "express";
 import { prisma } from "../lib/prisma";
 import { requireAuth, type AuthedRequest } from "../middleware/requireAuth";
 import { getEvents } from "../lib/eventCache";
-import { lifecycleStageFor } from "../services/events.service";
-import { events as eventContent } from "../content/events";
+import { lifecycleStageFor, resolveEventTiers } from "../services/events.service";
 
 const router = Router();
 
@@ -46,8 +45,7 @@ router.get("/events/:slug/progress", requireAuth, async (req: AuthedRequest, res
       return;
     }
 
-    const content = eventContent.find((e) => e.slug === slug);
-    const tiers = content?.tiers ?? [];
+    const tiers = await resolveEventTiers(prisma, event);
 
     const progress = await prisma.eventProgress.findUnique({
       where: { userId_eventId: { userId, eventId: event.id } },

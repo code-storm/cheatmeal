@@ -11,6 +11,36 @@ export interface UnlockedBadgeDTO {
   icon: string;
 }
 
+// The exact, exhaustive set of criteriaKey values isCriteriaMet's switch
+// below actually handles. Exported so adminBadges.routes.ts can validate
+// an admin-submitted criteriaKey against this same list (and so a future
+// client dropdown can populate itself from one source of truth) - a
+// Badge row with any other criteriaKey falls through isCriteriaMet's
+// `default: return false` and is permanently un-awardable, silently, not
+// a crash, so it matters that the admin UI/route prevents it up front
+// rather than relying on that runtime fallthrough to surface the mistake.
+export const BADGE_CRITERIA_KEYS = [
+  "FIRST_TASK",
+  "PERFECT_DAY",
+  "STREAK_7",
+  "STREAK_30",
+  "CHALLENGE_ROOKIE",
+  "CHALLENGE_CHAMPION",
+  "FIRST_REWARD_UNLOCK",
+  "CUSTOM_CREATOR",
+  "CENTURION",
+  "TRIMESTER_2_REACHED",
+  "WEEK_20_HALFWAY",
+  "TRIMESTER_3_REACHED",
+  "FULL_TERM_REACHED",
+  "EVENT_FIRST_ITEM",
+  "EVENT_SET_COMPLETE",
+] as const;
+export type BadgeCriteriaKey = (typeof BADGE_CRITERIA_KEYS)[number];
+export function isBadgeCriteriaKey(value: unknown): value is BadgeCriteriaKey {
+  return typeof value === "string" && (BADGE_CRITERIA_KEYS as readonly string[]).includes(value);
+}
+
 // Each criteria key's shared data is fetched at most once per
 // checkAndAwardBadges call, in parallel with every other key the
 // *remaining candidate* badges actually need - not once per candidate

@@ -14,6 +14,7 @@ import { useUnlockCelebration } from "../hooks/UnlockCelebrationContext";
 import { readSkinCssVars } from "../utils/skinColors";
 import { fireUnlockConfetti } from "../utils/confetti";
 import { PAGE_FADE_SCALE } from "../utils/motion";
+import { LIQUID_GLASS_PILL_MAP_URI } from "../assets/liquidGlassPillMap";
 
 const NAV_ITEMS = [
   { to: "/", label: "Today", icon: "📋" },
@@ -192,6 +193,26 @@ export function AppLayout() {
           </feSpecularLighting>
           <feComposite in="specular" in2="SourceAlpha" operator="in" result="specularClipped" />
           <feComposite in="displaced" in2="specularClipped" operator="arithmetic" k1={0} k2={1} k3={1} k4={0} />
+        </filter>
+        {/* Second filter, for genuinely pill-shaped surfaces only (header
+            nav bar today). Reuses the exact baked height-map asset from
+            the reference CodePen instead of procedural feTurbulence noise
+            - that's what gives it a real "liquid blob" glint rather than
+            flat/uniform shimmer. The map is baked for ONE rounded-capsule
+            shape, so it's deliberately not applied to cards/panels (any
+            other aspect ratio would misalign the edge-highlight from the
+            surface's actual corner geometry) - those keep #liquid-glass-edge
+            above, which is shape-agnostic. */}
+        <filter id="liquid-glass-pill" x="-20%" y="-20%" width="140%" height="140%" colorInterpolationFilters="sRGB">
+          <feImage href={LIQUID_GLASS_PILL_MAP_URI} x="0" y="0" width="100%" height="100%" result="map" />
+          <feGaussianBlur in="SourceGraphic" stdDeviation={0.6} result="blurred" />
+          <feDisplacementMap
+            in="blurred"
+            in2="map"
+            scale={9}
+            xChannelSelector="R"
+            yChannelSelector="G"
+          />
         </filter>
       </svg>
       <div className="ambient-bg-image" aria-hidden="true" />

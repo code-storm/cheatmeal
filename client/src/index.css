@@ -57,8 +57,14 @@
   --glass-bg-strong: rgba(255, 255, 255, 0.64);
   --glass-border: rgba(255, 255, 255, 0.55);
   --glass-highlight: rgba(255, 255, 255, 0.55);
-  --glass-blur: 28px;
-  --glass-blur-light: 18px;
+  /* Pulled down from 28px/18px: against the reference CodePen's 8px, this
+     much blur was smoothing away the displacement/specular detail from
+     #liquid-glass-edge entirely before it ever reached the screen, leaving
+     only a flat frosted wash with no visible refraction. Still well above
+     8px (most surfaces here are much larger than the pen's one 244px
+     pill, where that little blur reads as crisp rather than noisy). */
+  --glass-blur: 18px;
+  --glass-blur-light: 12px;
   --glass-saturate: 1.6;
 
   /* Light-mode text (dark ink) needs a LIGHT halo to read against busy
@@ -138,9 +144,13 @@
   --glass-bg-strong: rgba(38, 40, 48, 0.72);
   --glass-border: rgba(255, 255, 255, 0.14);
   --glass-highlight: rgba(255, 255, 255, 0.22);
-  --glass-blur: 24px;
-  --glass-blur-light: 16px;
-  --glass-saturate: 1.3;
+  /* Same less-blur rationale as :root above. */
+  --glass-blur: 16px;
+  --glass-blur-light: 10px;
+  /* Raised from 1.3: the CodePen's own dark/"dim" themes run saturate()
+     at 150%-200% - at 1.3 (130%) color behind the glass read muted/flat
+     next to its vivid tinted-glass look. */
+  --glass-saturate: 1.8;
 
   /* Dark-mode text (light ink) needs a DARK halo instead - inverse of
      the light-mode --text-halo above, same consumer. */
@@ -397,9 +407,15 @@ input {
   box-shadow: var(--shadow-raised), var(--shadow-glass-rim);
 }
 
-@supports (backdrop-filter: url(#liquid-glass-edge)) {
+/* The header pill is the one genuinely pill-shaped (border-radius:
+   var(--radius-pill)) major surface in the app, so it gets the baked-
+   height-map filter (#liquid-glass-pill, see AppLayout.tsx) instead of
+   the procedural #liquid-glass-edge every other glass surface uses -
+   that map is baked for one exact rounded-capsule geometry and would
+   misalign on a rectangular card/panel. */
+@supports (backdrop-filter: url(#liquid-glass-pill)) {
   .app-header__inner {
-    backdrop-filter: url(#liquid-glass-edge) blur(var(--glass-blur)) saturate(var(--glass-saturate));
+    backdrop-filter: url(#liquid-glass-pill) blur(var(--glass-blur)) saturate(var(--glass-saturate));
   }
 }
 

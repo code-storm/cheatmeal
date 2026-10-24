@@ -1,8 +1,7 @@
 import type { Prisma, Event } from "@prisma/client";
 import { getEvents } from "../lib/eventCache";
-import { lifecycleStageFor } from "./events.service";
+import { lifecycleStageFor, resolveEventTiers } from "./events.service";
 import { getActiveRewardItems } from "../lib/staticContentCache";
-import { events as eventContent } from "../content/events";
 
 type TxClient = Prisma.TransactionClient;
 
@@ -87,13 +86,17 @@ async function creditEventProgress(tx: TxClient, userId: string, event: Event, p
     create: { userId, eventId: event.id, pointsEarnedDuringEvent: points },
   });
 
-  const content = eventContent.find((e) => e.slug === event.slug);
-  if (!content || content.tiers.length === 0) return;
+  const tiers = await resolveEventTiers(tx, event);
+  // tiers is the resolved { tier, pointsRequired, rewardItemSlug }[]
+  // shape from events.service.ts's two-branch fallback (static
+  // content/events.ts first, else the persisted EventTier table) - this
+  // function's logic below is unchanged by which source it came from.
+  if (tiers.length === 0) return;
 
   const claimedTiers = new Set(
     progress.claimedTiers.split(",").filter(Boolean).map((t) => Number(t))
   );
-  const newlyCrossed = content.tiers.filter(
+  const newlyCrossed = tiers.filter(
     (tier) => !claimedTiers.has(tier.tier) && progress.pointsEarnedDuringEvent >= tier.pointsRequired
   );
   if (newlyCrossed.length === 0) return;

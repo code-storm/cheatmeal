@@ -15,6 +15,7 @@ import challengesRoutes from "./routes/challenges.routes";
 import badgesRoutes from "./routes/badges.routes";
 import tipsRoutes from "./routes/tips.routes";
 import eventsRoutes from "./routes/events.routes";
+import adminRoutes from "./routes/admin";
 
 const app = express();
 
@@ -36,6 +37,11 @@ app.use("/api", challengesRoutes);
 app.use("/api", badgesRoutes);
 app.use("/api", tipsRoutes);
 app.use("/api", eventsRoutes);
+// Separate prefix (not "/api") and a fully separate JWT/auth system
+// (adminAuth.service.ts/requireAdminAuth.ts) - see schema.prisma's
+// AdminUser model comment for why this never shares auth code with the
+// routers mounted above.
+app.use("/api/admin", adminRoutes);
 
 // Catch-all 404 for unmatched /api routes.
 app.use("/api", (_req: Request, res: Response) => {

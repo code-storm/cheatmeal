@@ -18,6 +18,8 @@ services:
         sync: false
       - key: JWT_SECRET
         sync: false
+      - key: ADMIN_JWT_SECRET
+        sync: false
       - key: CLIENT_ORIGIN
         value: https://cheatmeal-theta.vercel.app
       - key: NODE_ENV
