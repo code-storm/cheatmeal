@@ -1,26 +1,25 @@
 import { Link } from "react-router-dom";
 import type { EventDTO } from "../types";
+import { useCountdown, formatCountdown } from "../hooks/useCountdown";
 
 interface EventBannerProps {
   event: EventDTO;
 }
 
-function timeUntil(iso: string): string {
-  const diffMs = new Date(iso).getTime() - Date.now();
-  if (diffMs <= 0) return "soon";
-  const hours = Math.floor(diffMs / (60 * 60 * 1000));
-  if (hours < 24) return `${hours}h`;
-  const days = Math.floor(hours / 24);
-  return `${days}d`;
-}
-
 export function EventBanner({ event }: EventBannerProps) {
+  // Ticks live (see useCountdown's adaptive interval) rather than being
+  // computed once at render time - the previous version only ever
+  // recomputed "Coming in 21d" when something else happened to re-render
+  // this component, so it could sit stale for the entire session.
+  const countdown = useCountdown(event.stage === "RETIRED" ? null : event.stage === "UPCOMING" ? event.startsAt : event.endsAt);
+
   if (event.stage === "RETIRED") return null;
 
-  const countdownLabel =
-    event.stage === "UPCOMING"
-      ? `Coming in ${timeUntil(event.startsAt)}`
-      : `Ends in ${timeUntil(event.endsAt)}`;
+  const countdownLabel = countdown
+    ? `${event.stage === "UPCOMING" ? "Coming in" : "Ends in"} ${formatCountdown(countdown)}`
+    : event.stage === "UPCOMING"
+      ? "Coming soon"
+      : "Ending soon";
 
   return (
     <Link

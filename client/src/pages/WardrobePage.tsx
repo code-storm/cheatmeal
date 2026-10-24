@@ -8,6 +8,7 @@ import {
   useRewards,
   useUnlockReward,
 } from "../hooks/useRewards";
+import { useEvents } from "../hooks/useEvents";
 import { useRewardPreview } from "../hooks/RewardPreviewContext";
 import type { Rarity, RewardItemDTO } from "../types";
 
@@ -23,6 +24,7 @@ export default function WardrobePage() {
   const unlockReward = useUnlockReward();
   const activateReward = useActivateReward();
   const deactivateReward = useDeactivateReward();
+  const { data: eventsData } = useEvents();
   const { preview, startPreview, clearPreview } = useRewardPreview();
 
   if (isLoading) {
@@ -46,6 +48,12 @@ export default function WardrobePage() {
 
   const skins = data.items.filter((item) => item.category === "SKIN");
   const unlockedCount = skins.filter((item) => item.unlocked).length;
+
+  // See RewardsPage.tsx's identical helper - same cached ["events"] data.
+  function eventStartsAtFor(item: RewardItemDTO): string | null {
+    if (!item.eventSlug) return null;
+    return eventsData?.events.find((e) => e.slug === item.eventSlug)?.startsAt ?? null;
+  }
 
   function handleTogglePreview(item: RewardItemDTO) {
     if (preview?.slug === item.slug) {
@@ -100,6 +108,7 @@ export default function WardrobePage() {
               isUnlocking={unlockReward.isPending && unlockReward.variables === item.slug}
               isActivating={activateReward.isPending && activateReward.variables === item.slug}
               isRemoving={deactivateReward.isPending && deactivateReward.variables === item.category}
+              eventStartsAt={eventStartsAtFor(item)}
             />
           </motion.div>
         ))}

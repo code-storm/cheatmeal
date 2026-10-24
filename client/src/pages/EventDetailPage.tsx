@@ -111,6 +111,7 @@ export default function EventDetailPage() {
                   isUnlocking={unlockReward.isPending && unlockReward.variables === item.slug}
                   isActivating={activateReward.isPending && activateReward.variables === item.slug}
                   isRemoving={deactivateReward.isPending && deactivateReward.variables === item.category}
+                  eventStartsAt={event?.startsAt}
                 />
               </motion.div>
             ))}

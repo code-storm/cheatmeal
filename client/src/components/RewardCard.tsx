@@ -3,6 +3,7 @@ import type { RewardItemDTO } from "../types";
 import { HOVER_LIFT, SPRING_HOVER, SPRING_TAP, TAP_SCALE } from "../utils/motion";
 import { SkinSwatch } from "./SkinSwatch";
 import { SpriteImage } from "./SpriteImage";
+import { useCountdown, formatCountdown } from "../hooks/useCountdown";
 
 interface RewardCardProps {
   item: RewardItemDTO;
@@ -17,6 +18,12 @@ interface RewardCardProps {
   isUnlocking?: boolean;
   isActivating?: boolean;
   isRemoving?: boolean;
+  // The parent event's startsAt (ISO), when item.eventStage === "UPCOMING" -
+  // resolved by the page from the already-cached useEvents() list (see
+  // RewardsPage/WardrobePage/EventDetailPage), not refetched per-card.
+  // Undefined/null for non-UPCOMING items, which render a plain "Coming
+  // soon" with no timer.
+  eventStartsAt?: string | null;
 }
 
 export function RewardCard({
@@ -32,6 +39,7 @@ export function RewardCard({
   isUnlocking,
   isActivating,
   isRemoving,
+  eventStartsAt,
 }: RewardCardProps) {
   const canAfford = pointsBalance >= item.effectiveCostPoints;
   const progressPct = Math.min(100, Math.round((pointsBalance / item.effectiveCostPoints) * 100));
@@ -40,6 +48,8 @@ export function RewardCard({
   // was never purchasable in the first place, regardless of points - so it
   // gets its own modifier rather than reusing --locked.
   const expiredForUser = !item.unlocked && !item.purchasable;
+  const isUpcoming = expiredForUser && item.eventStage === "UPCOMING";
+  const countdown = useCountdown(isUpcoming ? eventStartsAt : null);
 
   return (
     <motion.div
@@ -87,7 +97,13 @@ export function RewardCard({
 
       {expiredForUser && (
         <span className="reward-card__expired-label">
-          {item.eventSlug ? "This event has ended" : "No longer available for you"}
+          {!item.eventSlug
+            ? "No longer available for you"
+            : isUpcoming
+              ? countdown
+                ? `Coming in ${formatCountdown(countdown)}`
+                : "Coming soon"
+              : "This event has ended"}
         </span>
       )}
 

@@ -256,7 +256,16 @@ export function AppLayout() {
         </div>
       </header>
       <main className="app-main">
-        <AnimatePresence mode="wait">
+        {/* "wait" (the previous mode) holds the NEW page unmounted until
+            the OLD page's exit animation fully finishes - an unconditional
+            ~320ms dead time on every navigation, on top of the ~320ms
+            enter fade, even when the new page's data was already cached
+            and ready to paint immediately. "popLayout" removes the exiting
+            page from layout flow (position: absolute during its exit) so
+            the incoming page starts its enter animation right away instead
+            of queuing behind the outgoing one - same crossfade look,
+            without the extra wait. */}
+        <AnimatePresence mode="popLayout">
           <motion.div key={location.pathname} {...PAGE_FADE_SCALE}>
             <Outlet />
           </motion.div>

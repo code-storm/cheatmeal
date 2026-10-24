@@ -10,6 +10,7 @@ import {
   useUnlockReward,
 } from "../hooks/useRewards";
 import { useBadges } from "../hooks/useBadges";
+import { useEvents } from "../hooks/useEvents";
 import { useRewardPreview } from "../hooks/RewardPreviewContext";
 import type { RewardCategory, RewardItemDTO } from "../types";
 
@@ -30,6 +31,7 @@ export default function RewardsPage() {
   const activateReward = useActivateReward();
   const deactivateReward = useDeactivateReward();
   const { data: badgesData } = useBadges();
+  const { data: eventsData } = useEvents();
   const { preview, startPreview, clearPreview } = useRewardPreview();
 
   if (isLoading) {
@@ -55,6 +57,15 @@ export default function RewardsPage() {
     if (item.category === "SKIN") return data!.activeSkinSlug === item.slug;
     if (item.category === "AVATAR") return data!.activeAvatarSlug === item.slug;
     return false;
+  }
+
+  // Resolved from the already-cached useEvents() list (same ["events"]
+  // query key every other event-aware view shares) rather than widening
+  // RewardItemDTO - avoids a backend DTO change for a value only the
+  // UPCOMING countdown needs.
+  function eventStartsAtFor(item: RewardItemDTO): string | null {
+    if (!item.eventSlug) return null;
+    return eventsData?.events.find((e) => e.slug === item.eventSlug)?.startsAt ?? null;
   }
 
   function handleTogglePreview(item: RewardItemDTO) {
@@ -102,6 +113,7 @@ export default function RewardsPage() {
                     isUnlocking={unlockReward.isPending && unlockReward.variables === item.slug}
                     isActivating={activateReward.isPending && activateReward.variables === item.slug}
                     isRemoving={deactivateReward.isPending && deactivateReward.variables === item.category}
+                    eventStartsAt={eventStartsAtFor(item)}
                   />
                 </motion.div>
               ))}
