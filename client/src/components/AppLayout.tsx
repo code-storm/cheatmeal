@@ -15,14 +15,18 @@ import { readSkinCssVars } from "../utils/skinColors";
 import { fireUnlockConfetti } from "../utils/confetti";
 import { PAGE_FADE_SCALE } from "../utils/motion";
 import { LIQUID_GLASS_PILL_MAP_URI } from "../assets/liquidGlassPillMap";
+import { TodayIcon, HistoryIcon, MacrosIcon, RewardsIcon, WardrobeIcon, ProfileIcon } from "./NavIcons";
 
+// Hand-drawn SVG icons (NavIcons.tsx), not emoji - matches the style
+// ColorSchemeToggle already uses right next to this nav, and renders
+// consistently across platforms instead of each OS's own emoji font.
 const NAV_ITEMS = [
-  { to: "/", label: "Today", icon: "📋" },
-  { to: "/history", label: "History", icon: "📅" },
-  { to: "/macros", label: "Macros", icon: "🍽️" },
-  { to: "/rewards", label: "Rewards", icon: "🎁" },
-  { to: "/wardrobe", label: "Wardrobe", icon: "👗" },
-  { to: "/profile", label: "Profile", icon: "👤" },
+  { to: "/", label: "Today", Icon: TodayIcon },
+  { to: "/history", label: "History", Icon: HistoryIcon },
+  { to: "/macros", label: "Macros", Icon: MacrosIcon },
+  { to: "/rewards", label: "Rewards", Icon: RewardsIcon },
+  { to: "/wardrobe", label: "Wardrobe", Icon: WardrobeIcon },
+  { to: "/profile", label: "Profile", Icon: ProfileIcon },
 ];
 
 // TODO(polish phase): once AppLayout has a reason to fetch /api/rewards
@@ -141,7 +145,7 @@ export function AppLayout() {
       end={item.to === "/"}
     >
       <span className="app-nav__icon" aria-hidden="true">
-        {item.icon}
+        <item.Icon />
       </span>
       <span className="app-nav__label">{item.label}</span>
     </NavLink>
@@ -256,16 +260,19 @@ export function AppLayout() {
         </div>
       </header>
       <main className="app-main">
-        {/* "wait" (the previous mode) holds the NEW page unmounted until
-            the OLD page's exit animation fully finishes - an unconditional
-            ~320ms dead time on every navigation, on top of the ~320ms
-            enter fade, even when the new page's data was already cached
-            and ready to paint immediately. "popLayout" removes the exiting
-            page from layout flow (position: absolute during its exit) so
-            the incoming page starts its enter animation right away instead
-            of queuing behind the outgoing one - same crossfade look,
-            without the extra wait. */}
-        <AnimatePresence mode="popLayout">
+        {/* mode="wait" holds the incoming page unmounted until the
+            outgoing one's exit animation fully finishes - needed so the
+            two pages never visibly overlap (switching to "popLayout" was
+            tried and reverted: it removed the dead time but made both
+            pages animate at once, which read as jerky/janky - new
+            content popping in while old content was still visibly
+            fading out). The actual fix for the original "feels slow"
+            complaint is PAGE_FADE_SCALE's own transition duration, now a
+            short 0.14s (see motion.ts's ROUTE_TRANSITION) instead of the
+            0.32s shared by other, non-sequenced UI moments - that cuts
+            the unavoidable exit-then-enter dead time from ~640ms to
+            ~280ms without reintroducing the overlap. */}
+        <AnimatePresence mode="wait">
           <motion.div key={location.pathname} {...PAGE_FADE_SCALE}>
             <Outlet />
           </motion.div>

@@ -461,8 +461,17 @@ input {
 }
 
 .app-nav__icon {
-  font-size: 0.95rem;
-  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* NavIcons.tsx's SVGs default to 18x18 (BaseIcon) - shrink slightly for
+   the top pill nav, where labels sit inline beside the icon rather than
+   stacked under it (mobile override below restores the full size). */
+.app-nav__icon svg {
+  width: 16px;
+  height: 16px;
 }
 
 .app-main {
@@ -1280,10 +1289,17 @@ input {
   }
 
   .app-nav__icon {
-    font-size: 1.15rem;
     padding: 4px 10px;
     border-radius: var(--radius-pill);
     transition: background-color 0.15s ease;
+  }
+
+  /* Full 18x18 size here (vs. the 16px top-pill override) - the bottom
+     bar stacks icon above label with more room per tab than the top
+     pill's inline layout. */
+  .app-nav__icon svg {
+    width: 18px;
+    height: 18px;
   }
 
   .app-nav__link--active .app-nav__icon {

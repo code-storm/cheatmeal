@@ -83,7 +83,7 @@ export function RewardCard({
       <p className="reward-card__name">{item.name}</p>
       <p className="reward-card__description">{item.description}</p>
 
-      {item.featured && !item.unlocked && (
+      {item.featured && !item.unlocked && !expiredForUser && (
         <span className="reward-card__featured">Featured · 25% off</span>
       )}
 
@@ -108,7 +108,7 @@ export function RewardCard({
       )}
 
       <p className="reward-card__cost">
-        {item.featured && !item.unlocked ? (
+        {item.featured && !item.unlocked && !expiredForUser ? (
           <>
             <span className="reward-card__cost--struck">{item.costPoints}</span>{" "}
             {item.effectiveCostPoints} pts
@@ -118,7 +118,7 @@ export function RewardCard({
         )}
       </p>
 
-      {!item.unlocked && !expiredForUser && (
+      {!item.unlocked && !expiredForUser && !canAfford && (
         <div className="reward-card__progress">
           <div className="reward-card__progress-track">
             <div className="reward-card__progress-fill" style={{ width: `${progressPct}%` }} />
